@@ -73,7 +73,7 @@ public class CarCommMessage implements RoadReportInfo
 
   public CarCommMessage (
     int                       car_id,
-    int                       mess_seq,
+    int                       msg_seq,
     double                    lon,
     double                    lat,
     double                    spd,
@@ -94,6 +94,25 @@ public class CarCommMessage implements RoadReportInfo
     carIdTbl    = car_tbl ;
     msgAlertTbl = msg_alert_tbl ;
     carAlertTbl = car_alert_tbl ;
+  }
+
+
+  /*************************************************************************
+   *
+   *  Format the data as a string.
+   *  Return a string of the message data formatted into text.
+   *
+   *  @return           Message contents formatted as a text string.
+   *
+   *************************************************************************
+   */
+
+  public String format ()
+  {
+
+    return String.format ("CarCommMsg: %d.%d %g %g %g %d %g",
+                          (msgId >> MSG_SEQ_BITS), (msgId & MSG_SEQ_MASK),
+                          longitude, latitude, speed, msgType, msgTime) ;
   }
 
 } //  END public class CarCommMessage

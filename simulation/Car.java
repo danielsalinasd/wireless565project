@@ -8,7 +8,8 @@
  ***************************************************************************
  */
 
-import java.lang.Math.* ;
+import java.lang.* ;
+import java.util.* ;
 
 
 /***************************************************************************
@@ -28,24 +29,32 @@ public class Car implements RoadReportInfo
   private class ReceivedMessage
   {
     public int              receivedCount ;
-    public boolean          hasSent ;
+    public double           resendTime ;
     public CarCommMessage   receivedMessage ;
 
     public ReceivedMessage (
       CarCommMessage        received_message,
       int                   received_count,
-      boolean               sent_out
+      double                resend_time
     )
     {
       receivedMessage     = received_message ;
       receivedCount       = received_count ;
-      hasSent             = sent_out ;
+      resendTime          = resend_time ;
+    }
+    
+    public String format ()
+    {
+      return String.format ("RcvMsg %d %g %s",
+                            receivedCount, resendTime,
+                            receivedMessage.format ()) ;
     }
   } //  END private class ReceivedMessage
 
   //  Messages that have been received and not expired.
 
-  private Vector<ReceivedMessage>   receivedMsgTbl ;
+  private Vector<ReceivedMessage>   receivedMsgTbl =
+                                        new Vector<ReceivedMessage> () ;
   int                               receivedMsgCnt = 0 ;
 
   //  Simulator using this object.
@@ -69,9 +78,9 @@ public class Car implements RoadReportInfo
 
   //	Alert management information.
 
-  Vector<AlertInfo>     alertsReceivedTbl = new Vector () ;
+  Vector<AlertInfo>     alertsReceivedTbl = new Vector<AlertInfo> () ;
   int                   alertsReceivedCnt = 0 ;
-  Vector<AlertReceived> carAlertsTbl      = new Vector () ;
+  Vector<AlertReceived> carAlertsTbl      = new Vector<AlertReceived> () ;
   int                   carAlertsCnt      = 0 ;
 
   //  Timers.
@@ -92,7 +101,6 @@ public class Car implements RoadReportInfo
    *  Create a car object.
    *
    *  @param    sim           Road report simulator using this object.
-   *  @param    car_id        Identifier the car is known by.
    *  @param    car_route     Route the car is following.
    *
    *************************************************************************
@@ -100,29 +108,26 @@ public class Car implements RoadReportInfo
 
   public Car (
     RoadReport                sim,
-    int                       car_id,
     Route                     car_route
   )
   {
     simulation            = sim ;
-    carId                 = car_id ;
     path                  = car_route ;
 
     messageSeq            = 0 ;
 
-    creationTime          = simulation.getCurrentTime () ;
+    creationTime          = sim.getCurrentTime () ;
+    carId                 = sim.cellServer.newCarId () ;
 
     //  Log this car's location at the specified interval.  It is the
     //  only timer initialy set.
 
-    locationSendTime      = creationTime +
-                            LOCATION_SEND_INTERVAL *
-                              (simulation.randomGen.nextDouble () *
-                               LOCATION_SEND_INTERVAL_ADJ +
-                               (1.0 - LOCATION_SEND_INTERVAL_ADJ)) ;
+    locationSendTime      = creationTime ;
 
-    simulation.timerUpdate (locationSendTime) ;
+    sim.timerUpdate (locationSendTime) ;
 
+    System.out.format ("%s: %d %g\n", "CarCreated", carId, creationTime) ;
+    
   } // END public Car
 
 
@@ -134,7 +139,7 @@ public class Car implements RoadReportInfo
    *************************************************************************
    */
 
-  void public updateTime (void)
+  public void updateTime ()
   {
     double                  nextTimer ;
 
@@ -143,7 +148,7 @@ public class Car implements RoadReportInfo
 
     location              = path.routeTime (curTime - creationTime) ;
 
-    nextTimer             = curTime ;
+    nextTimer             = curTime + NEXT_UPDATE_INTERVAL ;
 
     //  Handle expired messages.
 
@@ -176,7 +181,7 @@ public class Car implements RoadReportInfo
       sendLocation () ;
     }
 
-    if (locationSendTime > 0.0 && locationSendTIme < nextTimer)
+    if (locationSendTime > 0.0 && locationSendTime < nextTimer)
     {
       nextTimer = locationSendTime ;
     }
@@ -188,7 +193,7 @@ public class Car implements RoadReportInfo
       logLocations () ;
     }
 
-    if (logLocationTime > 0.0 && logLocationTIme < nextTimer)
+    if (logLocationTime > 0.0 && logLocationTime < nextTimer)
     {
       nextTimer = logLocationTime ;
     }
@@ -209,7 +214,144 @@ public class Car implements RoadReportInfo
 
     simulation.timerUpdate (nextTimer) ;
 
-  } //  END void public updateTime (void)
+  } //  END public void updateTime ()
+
+
+  /*************************************************************************
+   *
+   *  Remove expired messages.
+   *  Remove all messages in the received message table that have passed
+   *  their expiration times.
+   *
+   *************************************************************************
+   */
+
+  private void expireMessages ()
+  {
+    int             message_no ;
+    double          cur_msg_time ;
+    double          oldest_time ;
+    ReceivedMessage message ;
+
+    message_no  = 0 ;
+    oldest_time = curTime + MSG_EXPIRE_INTERVAL ;
+
+    while (message_no < receivedMsgCnt)
+    {
+      //  If the message has passed its expiration time remove it from
+      //  the received message table.
+
+      message = receivedMsgTbl.elementAt (message_no) ;
+      
+      cur_msg_time = message.receivedMessage.msgTime ;
+
+      if (cur_msg_time + MSG_EXPIRE_INTERVAL <= curTime)
+      {
+        System.out.format ("Remove%s\n", message.format ()) ;
+
+        receivedMsgCnt -- ;
+
+        if (message_no < receivedMsgCnt)
+        {
+          receivedMsgTbl
+              .setElementAt (receivedMsgTbl.elementAt (receivedMsgCnt),
+                             message_no) ;
+        }
+
+        receivedMsgTbl.removeElementAt (receivedMsgCnt) ;
+        message_no -- ;
+      }
+
+      //  Determine the oldest message time left in the table.
+
+      else if (oldest_time > cur_msg_time)
+      {
+        oldest_time = cur_msg_time ;
+      }
+
+      message_no ++ ;
+
+    } //  WHILE (message_no < receivedMsgCnt)
+
+    //  Set the next time this function needs to be run at.
+
+    if (receivedMsgCnt > 0)
+    {
+      receivedMsgExpire = oldest_time + MSG_EXPIRE_INTERVAL ;
+    }
+    else
+    {
+      receivedMsgExpire = 0.0 ;
+    }
+
+  } //  END private void expireMessages ()
+
+
+  /*************************************************************************
+   *
+   *  Rebroadcast received messages.
+   *  Rebroadcast received when their resend time has arrived.  A
+   *  resend time of 0 indicates that the message has already been
+   *  rebroadcast.
+   *
+   *************************************************************************
+   */
+
+  private void rebroadcastMessages ()
+  {
+    double            oldest_time ;
+    ReceivedMessage   cur_message ;
+
+    oldest_time = 0.0 ;
+
+    for (int i = 0 ; i < receivedMsgCnt ; i ++)
+    {
+      cur_message = receivedMsgTbl.elementAt (i) ;
+
+      //  Resend the message if its time has arived.
+
+      if (cur_message.resendTime > 0.0 &&
+          cur_message.resendTime <= curTime)
+      {
+        if (cur_message.receivedCount < MSG_RECEIVE_MAX)
+        {
+          resendCarComm (cur_message.receivedMessage) ;
+          cur_message.resendTime = 0.0 ;
+        }
+      }
+      else
+      {
+        //  Find the next time a rebroadcast is needed.
+
+        if (cur_message.resendTime > 0.0 &&
+            (cur_message.resendTime <= oldest_time || oldest_time == 0.0))
+        {
+          oldest_time = cur_message.resendTime ;
+        }
+      }
+    }
+
+    //  Update the time to next resend messages.
+
+    receivedMsgResend = oldest_time ;
+
+  } //  END private void rebroadcastMessages ()
+
+
+  /*************************************************************************
+   *
+   *  Send the location of this car to other local cars.
+   *  Broadcast the location message for this car.
+   *
+   *************************************************************************
+   */
+
+  private void sendLocation ()
+  {
+    sendCarComm (MT_LOCATION, null, null, null) ;
+
+    locationSendTime = curTime + LOCATION_SEND_INTERVAL ;
+  }
 
 
   /*************************************************************************
@@ -221,9 +363,9 @@ public class Car implements RoadReportInfo
    *************************************************************************
    */
 
-  void public updateLocation (void)
+  private void updateLocation ()
   {
-    curTime               = simulator.getCurrentTime () ;
+    curTime               = simulation.getCurrentTime () ;
 
     location              = path.routeTime (curTime - creationTime) ;
   }
@@ -239,13 +381,13 @@ public class Car implements RoadReportInfo
    *************************************************************************
    */
 
-  void public sendCarComm (
+  private void sendCarComm (
     CarCommMessage            message
   )
   {
-    simulator.carComm.sendMessage (location.latitude,
-                                   location.longitude,
-                                   message) ;
+    simulation.carComm.sendMessage (location.latitude,
+                                    location.longitude,
+                                    message) ;
   }
 
 
@@ -265,28 +407,39 @@ public class Car implements RoadReportInfo
    *************************************************************************
    */
 
-  void public sendCarComm (
-    int                       msg_type,
+  private void sendCarComm (
+    byte                      msg_type,
     int                   []  car_id_tbl,
     int                   []  msg_alert_tbl,
-    int                 [][]  car_alert_tbl
+    boolean             [][]  car_alert_tbl
   )
   {
+    CarCommMessage            sent_message ;
+
+    //  Create the new message and send it.
+
     updateLocation () ;
 
     messageSeq = (messageSeq + 1) & MSG_SEQ_MASK ;
 
-    sendCarComm (location.longitude, location.latitude,
-                 new CarCommMessage (carId, messageSeq,
-                                     location.longitude,
-                                     location.latitude,
-                                     location.speed,
-                                     msg_type,
-                                     cur_time,
-                                     car_id_tbl,
-                                     msg_alert_tbl,
-                                     car_alert_tbl)) ;
-  }
+    sent_message = new CarCommMessage (carId, messageSeq,
+                                       location.longitude,
+                                       location.latitude,
+                                       location.speed,
+                                       msg_type,
+                                       curTime,
+                                       car_id_tbl,
+                                       msg_alert_tbl,
+                                       car_alert_tbl) ;
+
+    sendCarComm (sent_message) ;
+
+    //  Add the message to the received message table so it is not resent.
+
+    receivedMsgTbl.addElement (new ReceivedMessage (sent_message, 0, 0.0)) ;
+    receivedMsgCnt ++ ;
+
+  } //  END void private sendCarComm
 
 
   /*************************************************************************
@@ -299,13 +452,13 @@ public class Car implements RoadReportInfo
    *************************************************************************
    */
 
-  void public resendCarComm (
+  private void resendCarComm (
     CarCommMessage            message
   )
   {
     updateLocation () ;
 
-    sendCarComm (location.longitude, location.latitude, message) ;
+    sendCarComm (message) ;
   }
 
 
@@ -319,8 +472,8 @@ public class Car implements RoadReportInfo
    *************************************************************************
    */
 
-  void public genAlert (
-    int                     alert_number
+  public void genAlert (
+    byte                    alert_number
   )
   {
     int                     msg_id ;
@@ -329,12 +482,11 @@ public class Car implements RoadReportInfo
 
     msg_id = (carId << MSG_SEQ_BITS) | messageSeq ;
 
-    alertsReceivedTbl.setElementAt (new AlertInfo (msg_id,
-                                                   alert_number,
-                                                   location.longitude,
-                                                   location.latitude,
-                                                   curTime),
-                                    alertsReceivedCnt) ;
+    alertsReceivedTbl.addElement (new AlertInfo (msg_id,
+                                                 alert_number,
+                                                 location.longitude,
+                                                 location.latitude,
+                                                 curTime)) ;
 
     alertsReceivedCnt ++ ;
   }
@@ -349,17 +501,16 @@ public class Car implements RoadReportInfo
    *************************************************************************
    */
 
-  void public logLocations (void)
+  private void logLocations ()
   {
     ReceivedMessage cur_msg ;
-    Vector<int>     car_ids   = new Vector () ;
-    Vector<int>     car_times = new Vector () ;
-    Vector<double>  car_lon   = new Vector () ;
-    Vector<double>  car_lat   = new Vector () ;
-    Vector<double>  car_speed = new Vector () ;
+    Vector<Integer> car_ids   = new Vector<Integer> () ;
+    Vector<Double>  car_times = new Vector<Double> () ;
+    Vector<Double>  car_lon   = new Vector<Double> () ;
+    Vector<Double>  car_lat   = new Vector<Double> () ;
+    Vector<Double>  car_speed = new Vector<Double> () ;
 
     int             car_cnt ;
-    ReceivedMessate cur_msg ;
 
     int         []  car_id_tbl ;
     double      []  car_times_tbl ;
@@ -371,31 +522,30 @@ public class Car implements RoadReportInfo
 
     //  Build a list of all car location information.
 
-    car_ids.setElementAt    (carId, 0) ;
-    car_times.setElementAt  (curTime, 0) ;
-    car_lon.setElementAt    (location.longitude, 0) ;
-    car_lat.setElementAt    (location.latitude, 0) ;
-    car_speed.setElementAt  (location.speed, 0) ;
+    car_ids.addElement    (new Integer (carId)) ;
+    car_times.addElement  (new Double (curTime)) ;
+    car_lon.addElement    (new Double (location.longitude)) ;
+    car_lat.addElement    (new Double (location.latitude)) ;
+    car_speed.addElement  (new Double (location.speed)) ;
 
     car_cnt = 1 ;
 
     for (int i = 0 ; i < receivedMsgCnt ; i ++)
     {
-      cur_msg = receivedMsgTbl [i] ;
+      cur_msg = receivedMsgTbl.elementAt (i) ;
 
       if (cur_msg.receivedMessage.msgType == MT_LOCATION)
       {
-        car_ids.setElementAt    ((cur_msg.receivedMessage.msgId >>
-                                  MSG_SEQ_BITS),
-                                 car_cnt) ;
-        car_times.setElementAt  (cur_msg.receivedMessage.msgTime,
-                                 car_cnt) ;
-        car_lon.setElementAt    (cur_msg.receivedMessage.longitude,
-                                 car_cnt) ;
-        car_lat.setElementAt    (cur_msg.receivedMessage.latitude,
-                                 car_cnt) ;
-        car_speed.setElementAt  (cur_msg.receivedMessage.speed,
-                                 car_cnt) ;
+        car_ids.addElement    (
+            new Integer (cur_msg.receivedMessage.msgId >> MSG_SEQ_BITS)) ;
+        car_times.addElement  (
+            new Double (cur_msg.receivedMessage.msgTime)) ;
+        car_lon.addElement    (
+            new Double (cur_msg.receivedMessage.longitude)) ;
+        car_lat.addElement    (
+            new Double (cur_msg.receivedMessage.latitude)) ;
+        car_speed.addElement  (
+            new Double (cur_msg.receivedMessage.speed)) ;
 
         car_cnt ++ ;
       }
@@ -409,14 +559,20 @@ public class Car implements RoadReportInfo
     car_lat_tbl   = new double  [car_cnt] ;
     car_speed_tbl = new double  [car_cnt] ;
 
-    car_id_tbl    = car_ids.toArray   (car_id_tbl) ;
-    car_times_tbl = car_times.toArray (car_times_tbl) ;
-    car_lon_tbl   = car_lon.toArray   (car_lon_tbl) ;
-    car_lat_tbl   = car_lat.toArray   (car_lat_tbl) ;
-    car_speed_tbl = car_speed.toArray (car_speed_tbl) ;
+    for (int i = 0 ; i < car_cnt ; i ++)
+    {
+      car_id_tbl    [i] = car_ids.elementAt   (i).intValue    () ;
+      car_times_tbl [i] = car_times.elementAt (i).doubleValue () ;
+      car_lon_tbl   [i] = car_lon.elementAt   (i).doubleValue () ;
+      car_lat_tbl   [i] = car_lat.elementAt   (i).doubleValue () ;
+      car_speed_tbl [i] = car_speed.elementAt (i).doubleValue () ;
+    }
 
-    sendCellComm (MT_LOC_TBL_SENT, car_id_tbl, car_times_tbl, car_lon_tbl,
-                  car_lat_tbl, car_speed_tbl, null, null, null) ;
+    simulation.cellComm.sendMessageToServer (
+        new CellCommMessage (MT_LOC_TBL_SENT, car_id_tbl,
+                             car_times_tbl, car_lon_tbl,
+                             car_lat_tbl, car_speed_tbl,
+                             null, null, null)) ;
 
     //  Send a location table sent message.
 
@@ -429,9 +585,8 @@ public class Car implements RoadReportInfo
                                     (simulation.randomGen.nextDouble () *
                                      LOCATION_LOG_INTERVAL_ADJ +
                                      (1.0 - LOCATION_LOG_INTERVAL_ADJ)) ;
-    updateTimers () ;
 
-  } //  END void public logLocations (void)
+  } //  END private void logLocations ()
 
 
   /*************************************************************************
@@ -442,12 +597,16 @@ public class Car implements RoadReportInfo
    *************************************************************************
    */
 
-  void public logAlerts (void)
+  private void logAlerts ()
   {
-    int         []  car_tbl         = new int [carAlertsCnt] ;
-    int         []  msg_alert_tbl   = new int [alertsReceivedCnt] ;
-    boolean   [][]  car_alert_tbl   = new int [carAlertsCnt]
-                                              [alertsReceivedCnt] ;
+    int         []  car_tbl         = new int     [carAlertsCnt] ;
+    int         []  msg_alert_tbl   = new int     [alertsReceivedCnt] ;
+    boolean   [][]  car_alert_tbl   = new boolean [carAlertsCnt]
+                                                  [alertsReceivedCnt] ;
+    byte        []  msg_alert_tp    = new byte    [alertsReceivedCnt] ;
+    double      []  time_tbl        = new double  [alertsReceivedCnt] ;
+    double      []  lon_tbl         = new double  [alertsReceivedCnt] ;
+    double      []  lat_tbl         = new double  [alertsReceivedCnt] ;
 
     AlertReceived   car_alert ;
     AlertInfo       cur_alert ;
@@ -456,7 +615,7 @@ public class Car implements RoadReportInfo
 
     for (int car_no = 0 ; car_no < carAlertsCnt ; car_no ++)
     {
-      car_alert = carAlertsTbl [car_no] ;
+      car_alert = carAlertsTbl.elementAt (car_no) ;
 
       car_tbl [car_no] = car_alert.carId ;
 
@@ -473,7 +632,7 @@ public class Car implements RoadReportInfo
 
     for (int alert_no = 0 ; alert_no < alertsReceivedCnt ; alert_no ++)
     {
-      cur_alert = alertsReceivedTbl [alert_no] ;
+      cur_alert = alertsReceivedTbl.elementAt (alert_no) ;
 
       msg_alert_tbl [alert_no] = cur_alert.msgId ;
       msg_alert_tp  [alert_no] = cur_alert.msgType ;
@@ -484,8 +643,11 @@ public class Car implements RoadReportInfo
 
     //  Send the alerts to the server.
 
-    semdCellComm (MT_ALERT_TBL_SENT, car_tbl, lon_tbl, lat_tbl, null,
-                  msg_alert_tbl, msg_alert_tp, car_alert_tbl) ;
+    simulation.cellComm.sendMessageToServer (
+        new CellCommMessage (MT_ALERT_TBL_SENT, car_tbl, time_tbl,
+                             lon_tbl, lat_tbl, null,
+                             msg_alert_tbl, msg_alert_tp,
+                             car_alert_tbl)) ;
 
     //  Send the alert table to the other cars.
 
@@ -502,9 +664,8 @@ public class Car implements RoadReportInfo
 
     logAlertInterval  = ALERT_LOG_INTERVAL_FRACT ;
     logAlertTime      = 0.0 ;
-    updateTimers () ;
 
-  } //  END void public logAlerts (void)
+  } //  END private void logAlerts ()
 
 
   /*************************************************************************
@@ -522,7 +683,7 @@ public class Car implements RoadReportInfo
    *************************************************************************
    */
 
-  void public receiveCarMessage (
+  public void receiveCarMessage (
     double                    lat,
     double                    lon,
     double                    tx_clarity,
@@ -535,6 +696,7 @@ public class Car implements RoadReportInfo
     double                    lat_diff ;
     double                    dist_sqr ;
     double                    speed ;
+    double                    resend_time ;
     int                       loc_index ;
     int                       car_index ;
     int                       alert_no ;
@@ -548,7 +710,7 @@ public class Car implements RoadReportInfo
     //  Determine if the message was acturally received.  (Signal was
     //  strong enough.)
 
-    lon_adjust    = cos (location.latitude * PI / 180.0) ;
+    lon_adjust    = Math.cos (location.latitude * Math.PI / 180.0) ;
 
     lat_diff      = (location.latitude  - lat) * LAT2KM ;
     lon_diff      = (location.longitude - lon) * LON2KM * lon_adjust ;
@@ -563,7 +725,7 @@ public class Car implements RoadReportInfo
 
     loc_index     = -1 ;
 
-    for (int i = 0 ; i < receivedMsgTblCnt ; i ++)
+    for (int i = 0 ; i < receivedMsgCnt ; i ++)
     {
       cur_msg     = receivedMsgTbl.elementAt (i) ;
 
@@ -594,7 +756,7 @@ public class Car implements RoadReportInfo
                                                                lon_adjust ;
     dist_sqr      = lat_diff * lat_diff + lon_diff * lon_diff ;
 
-    if (dist_sqr > Math.pow (SEPARATION_BASE + SEPARATION_TIME * speed))
+    if (dist_sqr > Math.pow (SEPARATION_BASE + SEPARATION_TIME * speed, 2))
     {
       return ;
     }
@@ -603,14 +765,20 @@ public class Car implements RoadReportInfo
 
     if (receivedMsgCnt == 0)
     {
-      receivedMsgExpire = curTime + MSG_EXPIRE_TIME ;
-      updateTimers () ;
+      receivedMsgExpire = curTime + MSG_EXPIRE_INTERVAL ;
     }
 
-    cur_msg = new ReceivedMessage (message, 1, false) ;
+    resend_time = curTime + MSG_RESEND_INTERVAL / (dist_sqr + 1.0) ;
 
-    receivedMsgTbl.setElementAt (cur_msg, receivedMsgCnt) ;
+    cur_msg = new ReceivedMessage (message, 1, resend_time) ;
+
+    receivedMsgTbl.addElement (cur_msg) ;
     receivedMsgCnt ++ ;
+
+    if (receivedMsgResend == 0.0 || receivedMsgResend > resend_time)
+    {
+      receivedMsgResend = resend_time ;
+    }
 
     //  Handle location messages.  Replace the last one sent with this one.
 
@@ -620,7 +788,7 @@ public class Car implements RoadReportInfo
       {
         receivedMsgCnt -- ;
         receivedMsgTbl.setElementAt (cur_msg, loc_index) ;
-        receivedMsgTbl.setElementAt (null, receivedMsgCnt) ;
+        receivedMsgTbl.removeElementAt (receivedMsgCnt) ;
       }
     }
 
@@ -636,7 +804,6 @@ public class Car implements RoadReportInfo
                                   (simulation.randomGen.nextDouble () *
                                    ALERT_LOG_INTERVAL_ADJ)) ;
         logAlertInterval = logAlertInterval * ALERT_LOG_INTERVAL_BACKOFF ;
-        updateTimers () ;
       }
 
       alertsReceivedTbl.addElement (new AlertInfo (message.msgId,
@@ -663,7 +830,6 @@ public class Car implements RoadReportInfo
                                    LOCATION_LOG_INTERVAL_ADJ) ;
           logLocationInterval   = logLocationInterval *
                                   LOCATION_LOG_INTERVAL_BACKOFF ;
-          updateTimers () ;
         }
       }
     }
@@ -676,7 +842,7 @@ public class Car implements RoadReportInfo
               car_index < message.carAlertTbl.length ;
            car_index ++)
       {
-        if (message.carIdTbl [car_index] = carId)
+        if (message.carIdTbl [car_index] == carId)
         {
           //  Remove all alerts that have been logged to the server.
 
@@ -686,7 +852,7 @@ public class Car implements RoadReportInfo
           {
             //  Find this alert's message in the message's alert table.
 
-            message_id  = alertsReceivedTbl [alert_no].msgId ;
+            message_id  = alertsReceivedTbl.elementAt (alert_no).msgId ;
 
             for (int msgid_no = 0 ;
                     msgid_no < message.msgAlertTbl.length ;
@@ -704,12 +870,13 @@ public class Car implements RoadReportInfo
 
                   if (alert_no < alertsReceivedCnt)
                   {
-                    alertsReceivedTbl [alert_no] =
-                              alertsReceivedTbl [alertsReceivedCnt] ;
+                    alertsReceivedTbl.setElementAt (
+                        alertsReceivedTbl.elementAt (alertsReceivedCnt),
+                        alert_no) ;
                     alert_no -- ;
                   }
 
-                  alertsReceivedTbl [alertsReceivedCnt] = null ;
+                  alertsReceivedTbl.removeElement (alertsReceivedCnt) ;
                   break ;
                 }
               }
@@ -737,16 +904,11 @@ public class Car implements RoadReportInfo
 
       for (int i = 0 ; i < carAlertsCnt ; i ++)
       {
-        if (carAlertsTbl [i].carId == car_id)
+        if (carAlertsTbl.elementAt (i).carId == car_id)
         {
           car_index = i ;
           break ;
         }
-      }
-
-      if (car_index < 0)
-      {
-        car_index = carAlertsCnt ++ ;
       }
 
       //  Create a new car alert entry and set the flags in it for all
@@ -756,7 +918,7 @@ public class Car implements RoadReportInfo
 
       for (alert_no = 0 ; alert_no < alertsReceivedCnt ; alert_no ++)
       {
-        message_id  = alertsReceivedTbl [alert_no].msgId ;
+        message_id  = alertsReceivedTbl.elementAt (alert_no).msgId ;
 
         for (int msgid_no = 0 ;
                 msgid_no < message.msgAlertTbl.length ;
@@ -776,25 +938,31 @@ public class Car implements RoadReportInfo
 
       if (cur_alert.receivedCnt > 0)
       {
-        carAlertsTbl [car_index] = cur_alert ;
+        if (car_index < 0)
+        {
+          carAlertsTbl.addElement (cur_alert) ;
+          carAlertsCnt ++ ;
+        }
+        else
+        {
+          carAlertsTbl.setElementAt (cur_alert, car_index) ;
+        }
       }
-      else
+      else if (car_index >= 0)
       {
         carAlertsCnt -- ;
 
         if (car_index < carAlertsCnt)
         {
-          carAlertsTbl [car_index]   = carAlertsTbl [carAlertCnt] ;
-          carAlertsTbl [carAlertCnt] = null ;
+          carAlertsTbl.setElementAt (carAlertsTbl.elementAt (carAlertsCnt),
+                                     car_index) ;
         }
-        else
-        {
-          carAlertsTbl [car_index]   = null ;
-        }
+
+        carAlertsTbl.removeElementAt (carAlertsCnt) ;
       }
     } //  ELSE IF (message.msgType == MT_AlertRecvd)
 
-  } //  END void public receiveCarMessage
+  } //  END public void receiveCarMessage
 
 
   /*************************************************************************
@@ -827,7 +995,6 @@ public class Car implements RoadReportInfo
                                     simulation.randomGen.nextDouble () *
                                     ALERT_LOG_INTERVAL_ADJ) ;
           logAlertInterval = logAlertInterval * ALERT_LOG_INTERVAL_BACKOFF ;
-          updateTimers () ;
         }
 
         alertsReceivedTbl.addElement (
@@ -904,13 +1071,13 @@ public class Car implements RoadReportInfo
 
         if (cur_car.receivedCnt <= 0)
         {
-          cur_car     = carAlertsTbl.elementAt (carAlertsCnt - 1) ;
-          carAlertsTbl.setElementAt (carAlertsCnt - 1) = null ;
           carAlertsCnt -- ;
+          cur_car = carAlertsTbl.elementAt (carAlertsCnt) ;
+          carAlertsTbl.removeElementAt (carAlertsCnt) ;
 
           if (car_no < carAlertsCnt)
           {
-            carAlertsTbl.setElmentAt (car_no) = cur_car ;
+            carAlertsTbl.setElementAt (cur_car, car_no) ;
             car_no -- ;
           }
         }

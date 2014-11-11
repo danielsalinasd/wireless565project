@@ -8,10 +8,10 @@
  ***************************************************************************
  */
 
- 
+
 /***************************************************************************
  *
- *  Car through communications.
+ *  Car through cellular communications.
  *  Sends messages originating from cars to the server through the
  *  cellular network.  Only one such object is used in the simulation.
  *
@@ -83,13 +83,15 @@ public class CellComm
     CellCommMessage           message
   )
   {
+    Car                       cur_car ;
+
     //  Get all the cars from the simulator's car list and find the
     //  desired car.
 
-    for (cur_car = simulation.firstCar () ;
-            cur_car != null ;
-         cur_car = simulation.nextcar ())
+    for (int i = 0 ; i < simulation.carCnt ; i ++)
     {
+      cur_car = simulation.carTbl.elementAt (i) ;
+
       if (cur_car.carId == car_id)
       {
         try
@@ -109,6 +111,6 @@ public class CellComm
 
     return (false) ;
 
-  } //  END public void sendMessage
+  } //  END public void sendMessageToCar
 
 } //  END public class CellComm

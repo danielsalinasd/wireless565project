@@ -122,10 +122,10 @@ public class CarComm
     //  Get all the cars from the simulator's car list and send them the
     //  message.
 
-    for (cur_car = simulation.firstCar () ;
-            cur_car != null ;
-         cur_car = simulation.nextcar ())
+    for (int i = 0 ; i < simulation.carCnt ; i ++)
     {
+      cur_car = simulation.carTbl.elementAt (i) ;
+
       //  Determine the received clarity for the message for this car.
 
       rx_clarity = rx_clarity_range * simulation.randomGen.nextDouble () +
@@ -137,7 +137,7 @@ public class CarComm
       {
         cur_car.receiveCarMessage (lat, lon, tx_clarity, rx_clarity,
                                    message) ;
-        
+
       } catch (RouteExpiredException e)
       {
         //  Car has timed out.  This is handled elsewhere.

@@ -8,7 +8,7 @@
  ***************************************************************************
  */
 
-import java.lang.math.* ;
+import java.lang.* ;
 
 
 /***************************************************************************
@@ -31,8 +31,8 @@ public class Route implements RoadReportInfo
 
   //  Movement information in degrees per second.
 
-  private final               lon_speed ;
-  private final               lat_speed ;
+  private final double        lon_speed ;
+  private final double        lat_speed ;
 
 
   /*************************************************************************
@@ -65,9 +65,10 @@ public class Route implements RoadReportInfo
     //  Distance per degree of longitude gets smaller as the latitude
     //  increases.
 
-    lat_speed = (spd * cos (dir * PI / 180.0) / 3600.0) / LAT2KM ;
-    lon_speed = (spd * sin (dir * PI / 180.0) / 3600.0) / LON2KM /
-                cos (lat * PI / 180.0) ;
+    lat_speed = (spd * Math.cos (dir * Math.PI / 180.0) / 3600.0) /
+                LAT2KM ;
+    lon_speed = (spd * Math.sin (dir * Math.PI / 180.0) / 3600.0) /
+                LON2KM / Math.cos (lat * Math.PI / 180.0) ;
 
   } // END public Route
 
@@ -87,7 +88,7 @@ public class Route implements RoadReportInfo
    *************************************************************************
    */
 
-  MovementVector public routeTime (
+  public MovementVector routeTime (
     double                    seconds
   )
   {
@@ -98,7 +99,7 @@ public class Route implements RoadReportInfo
     
     return (new MovementVector (atStart.longitude + lon_speed * seconds,
                                 atStart.latitude  + lat_speed * seconds,
-                                atStart.bearing,    atStart.speed) ;
+                                atStart.bearing,    atStart.speed)) ;
   }
 
 } //  END public class Route

@@ -29,7 +29,7 @@ public class CellCommMessage
   //  is incremented with each message sent and reset to zero when it
   //  reaches 64.
 
-  public final int            msgType ;   //  Type of message that this is.
+  public final byte           msgType ;   //  Type of message that this is.
 
   public final int        []  carIds ;    //  Ids of the cars info is for.
 
@@ -72,7 +72,7 @@ public class CellCommMessage
    */
 
   public CellCommMessage (
-    int                       msg_type,
+    byte                      msg_type,
     int                   []  car_ids,
     double                []  time,
     double                []  lon,
@@ -93,6 +93,31 @@ public class CellCommMessage
     msgAlertTbl   = msg_alert_tbl ;
     msgAlertType  = msg_alert_tp ;
     carAlertTbl   = car_alert_tbl ;
+  }
+
+
+  /*************************************************************************
+   *
+   *  Format the data as a string.
+   *  Return a string of the message data formatted into text.
+   *
+   *  @return           Message contents formatted as a text string.
+   *
+   *************************************************************************
+   */
+
+  public String format ()
+  {
+    String        car_id_str ;
+    String        time_str ;
+    String        lon_str ;
+    String        lat_str ;
+    String        spd_str ;
+    String        msg_alert_tbl_str ;
+    String        msg_alert_tp_str ;
+    String        car_alert_tbl_str ;
+
+    return String.format ("CellCommMsg: %d", msgType) ;
   }
 
 } //  END public class CellCommMessage

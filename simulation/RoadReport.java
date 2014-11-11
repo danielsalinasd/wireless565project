@@ -8,6 +8,8 @@
  *****************************************************************************
  */
 
+import java.util.* ;
+
 
 /*****************************************************************************
  *
@@ -27,29 +29,30 @@ public class RoadReport implements RoadReportInfo
 
   //  Random number generator.
 
-  private long                  randomSeed = 0xABCDEF987653L ;
+  private static long           randomSeed = 0xABCDEF987653L ;
   public Random                 randomGen ;
 
   //  Communication objects.
 
   public CarComm                carComm ;
   public CellComm               cellComm ;
+  public CellServer             cellServer ;
 
   //  Table of Routes to run cars on.
 
-  private static Vector<Route>  routeTbl = new Vector () ;
+  private static Vector<Route>  routeTbl = new Vector<Route> () ;
   private static int            routeCnt = 0 ;
+
+  private int                   nextRoute = 0 ;
 
   //  Car Table.  New cars are added to the table as they are removed.
 
-  public Vector<Car>            carTbl = new Vector () ;
+  public Vector<Car>            carTbl = new Vector<Car> () ;
   public int                    carCnt = 0 ;
-
-  public int                    nextCarId = 1 ;
 
   //  Timers and the current time.
 
-  public double                 curTime ;
+  private double                curTime ;
 
   private double                nextTimer ;
 
@@ -81,9 +84,10 @@ public class RoadReport implements RoadReportInfo
 
     //  Create the communication ojects.
 
-    simulation.carComm  = new CarComm  (simulation, TX_CLARITY_RANGE,
-                                                    RX_CLARITY_RANGE) ;
-    simulation.cellComm = new CellComm (simulation) ;
+    simulation.carComm    = new CarComm  (simulation, TX_CLARITY_RANGE,
+                                                      RX_CLARITY_RANGE) ;
+    simulation.cellComm   = new CellComm (simulation) ;
+    simulation.cellServer = new CellServer (simulation) ;
 
     //  Fill the route table.
 
@@ -117,6 +121,20 @@ public class RoadReport implements RoadReportInfo
 
   /*************************************************************************
    *
+   *  Return the current time.
+   *  Reader funtion for the current time.
+   *
+   *************************************************************************
+   */
+
+  public double getCurrentTime ()
+  {
+    return curTime ;
+  }
+
+
+  /*************************************************************************
+   *
    *  Handle the simulation's timers.
    *  Move the current time to the next timer's time and call all the
    *  objects' timer handling functions.  These functions are expected
@@ -126,24 +144,27 @@ public class RoadReport implements RoadReportInfo
    *************************************************************************
    */
 
-  public void timerHandler (void)
+  public void timerHandler ()
   {
     //  Update the current time to the next timer value.
 
-    curTime   = nextTimer ;
-    nextTimer = 0.0 ;
+    while (true)
+    {
+      curTime   = nextTimer ;
+      nextTimer = 0.0 ;
 
-    //  Create any new cars.
+      //  Create any new cars.
 
-    addCar () ;
+      addCar () ;
 
-    //  Create any new alerts.
+      //  Create any new alerts.
 
-    addAlert () ;
+      addAlert () ;
 
-    //  Handle car timers.
+      //  Handle car timers.
 
-    updateCars () ;
+      updateCars () ;
+    }
   }
 
 
@@ -155,9 +176,9 @@ public class RoadReport implements RoadReportInfo
    *************************************************************************
    */
 
-  public void addAlert (void)
+  public void addAlert ()
   {
-    int                 alert_number ;
+    byte                alert_number ;
     int                 car_index ;
 
     if (addAlertTime > curTime)
@@ -168,9 +189,10 @@ public class RoadReport implements RoadReportInfo
 
     //  Choose an alert and car to send it randomly.
 
-    alert_number  = (int) ((double) MT_ALERT_COUNT *
-                           randomGen.nextDouble ()) + MT_ALERTS ;
-    car_index     = (int) ((double) carCnt * randomGen.nextDouble ()) ;
+    alert_number  = (byte) ((int) ((double) MT_ALERT_COUNT *
+                                   randomGen.nextDouble ()) +
+                            (int) MT_ALERTS) ;
+    car_index     = (int)  ((double) carCnt * randomGen.nextDouble ()) ;
 
     //  Send the alert.
 
@@ -180,7 +202,7 @@ public class RoadReport implements RoadReportInfo
 
     addAlertTime = curTime + ALERT_CREATION_INTERVAL ;
 
-    timerUpdate (alertAddTime) ;
+    timerUpdate (addAlertTime) ;
   }
 
 
@@ -192,7 +214,7 @@ public class RoadReport implements RoadReportInfo
    *************************************************************************
    */
 
-  public void addCar (void)
+  public void addCar ()
   {
     Route         carRoute ;
 
@@ -212,8 +234,7 @@ public class RoadReport implements RoadReportInfo
 
     //  Create a car using this route.
 
-    carTbl.setElementAt (new Car (this, nextCarId ++, carRoute), carCnt) ;
-
+    carTbl.addElement (new Car (this, carRoute)) ;
     carCnt ++ ;
 
     //  Schedule the next car add.
@@ -233,7 +254,7 @@ public class RoadReport implements RoadReportInfo
    *************************************************************************
    */
 
-  public void updateCars (void)
+  public void updateCars ()
   {
     int                 car_index ;
     Car                 cur_car ;
@@ -261,11 +282,12 @@ public class RoadReport implements RoadReportInfo
         if (car_index < carCnt)
         {
           carTbl.setElementAt (carTbl.elementAt (carCnt), car_index) ;
-          carTbl.setElementAt (null, carCnt) ;
         }
+
+        carTbl.removeElementAt (carCnt) ;
       }
     }
-  } //  END public void updateCars (void)
+  } //  END public void updateCars ()
 
 
   /*************************************************************************

@@ -25,7 +25,6 @@ public interface RoadReportInfo
   //  Timing parameters (in seconds).
 
   static final double         LOCATION_SEND_INTERVAL        =  5.0 ;
-  static final double         LOCATION_SEND_INTERVAL_ADJ    =  0.1 ;
 
   static final double         LOCATION_LOG_INTERVAL         = 25.0 ;
   static final double         LOCATION_LOG_INTERVAL_ADJ     =  0.1 ;
@@ -37,11 +36,14 @@ public interface RoadReportInfo
   static final double         ALERT_LOG_INTERVAL_FRACT      =  0.5 ;
   static final double         ALERT_LOG_INTERVAL_BACKOFF    =  0.9 ;
 
+  static final double         MSG_RESEND_INTERVAL           = 1.0 ;
   static final double         MSG_EXPIRE_INTERVAL           = 60.0 ;
 
   static final double         CAR_CREATION_INTERVAL         = 60.0 ;
 
   static final double         ALERT_CREATION_INTERVAL       = 60.0 ;
+
+  static final double         NEXT_UPDATE_INTERVAL          = 60.0 ;
 
   //  Message ID built from car ID and message sequence number.
   //  (Car ID is shifted by given number of bits and added to the
@@ -88,6 +90,11 @@ public interface RoadReportInfo
 
   static final double         TX_CLARITY_RANGE              = 1.0 ;
   static final double         RX_CLARITY_RANGE              = 1.0 ;
+
+  //  Number of times a message is received before rebroadcasting it is
+  //  skipped.
+
+  static final int            MSG_RECEIVE_MAX               = 4 ;
 
   //  Local area definition parameters.  (Distance in kilometers, time in
   //  seconds.)
