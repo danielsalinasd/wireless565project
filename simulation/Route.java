@@ -113,14 +113,14 @@ public class Route implements RoadReportInfo
    *************************************************************************
    */
 
-  public String format ()
+  public String toString ()
   {
     StringBuilder     result = new StringBuilder () ;
 
     //  Add the basic message information and the movement vector.
 
     result.append (String.format ("<Route %g ", duration)) ;
-    result.append (atStart.format ()) ;
+    result.append (atStart.toString ()) ;
     result.append (">") ;
 
     return (result.toString ()) ;

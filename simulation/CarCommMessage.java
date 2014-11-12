@@ -107,7 +107,7 @@ public class CarCommMessage implements RoadReportInfo
    *************************************************************************
    */
 
-  public String format ()
+  public String toString ()
   {
     int               i ;
     StringBuilder     result = new StringBuilder () ;
@@ -179,6 +179,6 @@ public class CarCommMessage implements RoadReportInfo
 
     return (result.toString ()) ;
 
-  } //  END public String format ()
+  } //  END public String toString ()
 
 } //  END public class CarCommMessage

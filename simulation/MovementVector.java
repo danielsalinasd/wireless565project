@@ -66,7 +66,7 @@ public class MovementVector
    *************************************************************************
    */
 
-  public String format ()
+  public String toString ()
   {
     return (String.format ("<Movement %g %g %g %g>",
                            longitude, latitude, bearing, speed)) ;

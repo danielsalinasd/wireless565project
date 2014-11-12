@@ -106,7 +106,7 @@ public class CellCommMessage implements RoadReportInfo
    *************************************************************************
    */
 
-  public String format ()
+  public String toString ()
   {
     int               i ;
     StringBuilder     result = new StringBuilder () ;
@@ -256,6 +256,6 @@ public class CellCommMessage implements RoadReportInfo
 
     return (result.toString ()) ;
 
-  } //  END public String format ()
+  } //  END public String toString ()
 
 } //  END public class CellCommMessage

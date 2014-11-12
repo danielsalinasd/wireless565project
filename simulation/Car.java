@@ -43,11 +43,11 @@ public class Car implements RoadReportInfo
       resendTime          = resend_time ;
     }
     
-    public String format ()
+    public String toString ()
     {
       return String.format ("RcvMsg %d %g %s",
                             receivedCount, resendTime,
-                            receivedMessage.format ()) ;
+                            receivedMessage.toString ()) ;
     }
   } //  END private class ReceivedMessage
 
@@ -247,7 +247,7 @@ public class Car implements RoadReportInfo
 
       if (cur_msg_time + MSG_EXPIRE_INTERVAL <= curTime)
       {
-        System.out.format ("Remove%s\n", message.format ()) ;
+        System.out.format ("Remove%s\n", message.toString ()) ;
 
         receivedMsgCnt -- ;
 
