@@ -19,7 +19,7 @@
  ***************************************************************************
  */
 
-public class AlertInfo
+public class AlertInfo implements RoadReportInfo
 {
   public final int          msgId ;
   public final byte         msgType ;
@@ -55,6 +55,25 @@ public class AlertInfo
     longitude = lon ;
     latitude  = lat ;
     time      = now ;
+  }
+
+
+  /*************************************************************************
+   *
+   *  Format the data as a string.
+   *  Return a string of the alert data formatted into text.
+   *
+   *  @return           Alert contents formatted as a text string.
+   *
+   *************************************************************************
+   */
+
+  public String format ()
+  {
+    return (String.format ("<Alert %d.%d %d %g %g %g>",
+                           (msgId >> MSG_SEQ_BITS),
+                           (msgId & MSG_SEQ_MASK),
+                           msgType, longitude, latitude, time)) ;
   }
 
 } //  END public class AlertInfo

@@ -109,10 +109,76 @@ public class CarCommMessage implements RoadReportInfo
 
   public String format ()
   {
+    int               i ;
+    StringBuilder     result = new StringBuilder () ;
+    boolean       []  car_alerts ;
+    int               alert_no ;
 
-    return String.format ("CarCommMsg: %d.%d %g %g %g %d %g",
-                          (msgId >> MSG_SEQ_BITS), (msgId & MSG_SEQ_MASK),
-                          longitude, latitude, speed, msgType, msgTime) ;
-  }
+    //  Add the basic message information.
+
+    result.append (String.format ("<CarCommMsg %d.%d %g %g %g %d %g",
+                                  (msgId >> MSG_SEQ_BITS),
+                                  (msgId & MSG_SEQ_MASK),
+                                  longitude, latitude, speed, msgType,
+                                  msgTime)) ;
+
+    //  Append the Car Table.
+
+    result.append (" [") ;
+
+    for (i = 0 ; i < carIdTbl.length ; i ++)
+    {
+      if (i > 0)
+      {
+        result.append (" ") ;
+      }
+
+      result.append (String.format ("%d", carIdTbl [i])) ;
+    }
+
+    result.append ("]") ;
+
+    //  Append the Alert Table.
+
+    result.append (" [") ;
+
+    for (i = 0 ; i < msgAlertTbl.length ; i ++)
+    {
+      if (i > 0)
+      {
+        result.append (" ") ;
+      }
+
+      result.append (String.format ("%d.%d",
+                                    (msgAlertTbl [i] >> MSG_SEQ_BITS),
+                                    (msgAlertTbl [i] & MSG_SEQ_MASK))) ;
+    }
+
+    result.append ("]") ;
+
+    //  Append the Car Alert Table.
+
+    result.append (" [") ;
+
+    for (i = 0 ; i < carAlertTbl.length ; i ++)
+    {
+      if (i > 0)
+      {
+        result.append (" ") ;
+      }
+
+      car_alerts = carAlertTbl [i] ;
+
+      for (alert_no = 0 ; alert_no < carAlertTbl.length ; alert_no ++)
+      {
+        result.append ((car_alerts [alert_no]) ? "+" : "-") ;
+      }
+    }
+
+    result.append ("]>") ;
+
+    return (result.toString ()) ;
+
+  } //  END public String format ()
 
 } //  END public class CarCommMessage

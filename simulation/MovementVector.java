@@ -55,4 +55,21 @@ public class MovementVector
     speed     = spd ;
   }
 
+
+  /*************************************************************************
+   *
+   *  Format the data as a string.
+   *  Return a string of the movement data formatted into text.
+   *
+   *  @return           Movement contents formatted as a text string.
+   *
+   *************************************************************************
+   */
+
+  public String format ()
+  {
+    return (String.format ("<Movement %g %g %g %g>",
+                           longitude, latitude, bearing, speed)) ;
+  }
+
 } //  END public class MovementVector

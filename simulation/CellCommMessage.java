@@ -19,7 +19,7 @@
  ***************************************************************************
  */
 
-public class CellCommMessage
+public class CellCommMessage implements RoadReportInfo
 {
 
   //  Message Contents.
@@ -108,16 +108,154 @@ public class CellCommMessage
 
   public String format ()
   {
-    String        car_id_str ;
-    String        time_str ;
-    String        lon_str ;
-    String        lat_str ;
-    String        spd_str ;
-    String        msg_alert_tbl_str ;
-    String        msg_alert_tp_str ;
-    String        car_alert_tbl_str ;
+    int               i ;
+    StringBuilder     result = new StringBuilder () ;
+    boolean       []  car_alerts ;
+    int               alert_no ;
 
-    return String.format ("CellCommMsg: %d", msgType) ;
-  }
+    //  Add the basic message information.
+
+    result.append (String.format ("<CellCommMsg %d",
+                                  msgType)) ;
+
+
+    //  Append the Car IDs.
+
+    result.append (" [") ;
+
+    for (i = 0 ; i < carIds.length ; i ++)
+    {
+      if (i > 0)
+      {
+        result.append (" ") ;
+      }
+
+      result.append (String.format ("%d", carIds [i])) ;
+    }
+
+    result.append ("]") ;
+
+    //  Append the Times.
+
+    result.append (" [") ;
+
+    for (i = 0 ; i < msgTime.length ; i ++)
+    {
+      if (i > 0)
+      {
+        result.append (" ") ;
+      }
+
+      result.append (String.format ("%g", msgTime [i])) ;
+    }
+
+    result.append ("]") ;
+
+     //  Append the Longitues.
+
+    result.append (" [") ;
+
+    for (i = 0 ; i < longitude.length ; i ++)
+    {
+      if (i > 0)
+      {
+        result.append (" ") ;
+      }
+
+      result.append (String.format ("%g", longitude [i])) ;
+    }
+
+    result.append ("]") ;
+
+    //  Append the Latitudes.
+
+    result.append (" [") ;
+
+    for (i = 0 ; i < latitude.length ; i ++)
+    {
+      if (i > 0)
+      {
+        result.append (" ") ;
+      }
+
+      result.append (String.format ("%g", latitude [i])) ;
+    }
+
+    result.append ("]") ;
+
+    //  Append the Speeds.
+
+    result.append (" [") ;
+
+    for (i = 0 ; i < speed.length ; i ++)
+    {
+      if (i > 0)
+      {
+        result.append (" ") ;
+      }
+
+      result.append (String.format ("%g", speed [i])) ;
+    }
+
+    result.append ("]") ;
+
+    //  Append the Alerts.
+
+    result.append (" [") ;
+
+    for (i = 0 ; i < msgAlertTbl.length ; i ++)
+    {
+      if (i > 0)
+      {
+        result.append (" ") ;
+      }
+
+      result.append (String.format ("%d.%d",
+                                    (msgAlertTbl [i] >> MSG_SEQ_BITS),
+                                    (msgAlertTbl [i] & MSG_SEQ_MASK))) ;
+    }
+
+    result.append ("]") ;
+
+    //  Append the Alert Types.
+
+    result.append (" [") ;
+
+    for (i = 0 ; i < msgAlertType.length ; i ++)
+    {
+      if (i > 0)
+      {
+        result.append (" ") ;
+      }
+
+      result.append (String.format ("%d", msgAlertType [i])) ;
+    }
+
+    result.append ("]") ;
+
+   //  Append the Car Alert Table.
+
+    result.append (" [") ;
+
+    for (i = 0 ; i < carAlertTbl.length ; i ++)
+    {
+      if (i > 0)
+      {
+        result.append (" ") ;
+      }
+
+      car_alerts = carAlertTbl [i] ;
+
+      for (alert_no = 0 ; alert_no < carAlertTbl.length ; alert_no ++)
+      {
+        result.append ((car_alerts [alert_no]) ? "+" : "-") ;
+      }
+    }
+
+    result.append ("]>") ;
+
+    return (result.toString ()) ;
+
+  } //  END public String format ()
 
 } //  END public class CellCommMessage

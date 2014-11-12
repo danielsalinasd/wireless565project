@@ -102,4 +102,28 @@ public class Route implements RoadReportInfo
                                 atStart.bearing,    atStart.speed)) ;
   }
 
+
+  /*************************************************************************
+   *
+   *  Format the data as a string.
+   *  Return a string of the route data formatted into text.
+   *
+   *  @return           Route contents formatted as a text string.
+   *
+   *************************************************************************
+   */
+
+  public String format ()
+  {
+    StringBuilder     result = new StringBuilder () ;
+
+    //  Add the basic message information and the movement vector.
+
+    result.append (String.format ("<Route %g ", duration)) ;
+    result.append (atStart.format ()) ;
+    result.append (">") ;
+
+    return (result.toString ()) ;
+  }
+
 } //  END public class Route

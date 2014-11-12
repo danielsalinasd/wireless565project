@@ -26,7 +26,7 @@ class AlertReceived
   public boolean      []  receivedTbl ;   // True if the given alert was
                                           // received by this car.
 
-                                          
+
   /*************************************************************************
    *
    *  Constructor.
@@ -47,6 +47,39 @@ class AlertReceived
     carId       = car_id ;
     receivedCnt = 0 ;
     receivedTbl = new boolean [alert_cnt] ;
+  }
+
+
+  /*************************************************************************
+   *
+   *  Format the data as a string.
+   *  Return a string of the alert received data formatted into text.
+   *
+   *  @return           Alert received contents formatted as a text string.
+   *
+   *************************************************************************
+   */
+
+  public String format ()
+  {
+    int               i ;
+    StringBuilder     result = new StringBuilder () ;
+
+    //  Append the basic information.
+
+    result.append (String.format ("<AlertRcvd %d %d ",
+                                  carId, receivedCnt)) ;
+
+    //  Append the Alerts Received table.
+
+    for (i = 0 ; i < receivedTbl.length ; i ++)
+    {
+      result.append ((receivedTbl [i]) ? "+" : "-") ;
+    }
+
+    result.append (">") ;
+
+    return (result.toString ()) ;
   }
 
 } //  END AlertReceived
