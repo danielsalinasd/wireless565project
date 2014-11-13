@@ -1,24 +1,24 @@
-/*****************************************************************************
+/***************************************************************************
  *
  *  Simulate a VANET/Cellular Road Reporting system.
  *  Time driven operations.
  *
  *  @copyright  Copyright 2014 Emery Newlon
  *
- *****************************************************************************
+ ***************************************************************************
  */
 
 import java.util.* ;
 
 
-/*****************************************************************************
+/***************************************************************************
  *
  *  Road Reporting simulation driver class.
  *  Drives the simulation.
  *
  *  @author     Emery Newlon
  *
- *****************************************************************************
+ ***************************************************************************
  */
 
 public class RoadReport implements RoadReportInfo
@@ -108,6 +108,8 @@ public class RoadReport implements RoadReportInfo
 
     //  Start the timer handler.
 
+    System.out.println ("Starting the Simulation") ;
+
     simulation.curTime   = 0.0 ;
     simulation.nextTimer = 1.0 ;
 
@@ -150,6 +152,8 @@ public class RoadReport implements RoadReportInfo
 
     while (true)
     {
+      System.out.format ("Timer: %g %g\n", curTime, nextTimer) ;
+
       curTime   = nextTimer ;
       nextTimer = 0.0 ;
 

@@ -68,7 +68,7 @@ public class AlertInfo implements RoadReportInfo
    *************************************************************************
    */
 
-  public String format ()
+  public String toString ()
   {
     return (String.format ("<Alert %d.%d %d %g %g %g>",
                            (msgId >> MSG_SEQ_BITS),

@@ -126,14 +126,17 @@ public class CarCommMessage implements RoadReportInfo
 
     result.append (" [") ;
 
-    for (i = 0 ; i < carIdTbl.length ; i ++)
+    if (carIdTbl != null)
     {
-      if (i > 0)
+      for (i = 0 ; i < carIdTbl.length ; i ++)
       {
-        result.append (" ") ;
-      }
+        if (i > 0)
+        {
+          result.append (" ") ;
+        }
 
-      result.append (String.format ("%d", carIdTbl [i])) ;
+        result.append (String.format ("%d", carIdTbl [i])) ;
+      }
     }
 
     result.append ("]") ;
@@ -142,16 +145,19 @@ public class CarCommMessage implements RoadReportInfo
 
     result.append (" [") ;
 
-    for (i = 0 ; i < msgAlertTbl.length ; i ++)
+    if (msgAlertTbl != null)
     {
-      if (i > 0)
+      for (i = 0 ; i < msgAlertTbl.length ; i ++)
       {
-        result.append (" ") ;
-      }
+        if (i > 0)
+        {
+          result.append (" ") ;
+        }
 
-      result.append (String.format ("%d.%d",
-                                    (msgAlertTbl [i] >> MSG_SEQ_BITS),
-                                    (msgAlertTbl [i] & MSG_SEQ_MASK))) ;
+        result.append (String.format ("%d.%d",
+                                      (msgAlertTbl [i] >> MSG_SEQ_BITS),
+                                      (msgAlertTbl [i] & MSG_SEQ_MASK))) ;
+      }
     }
 
     result.append ("]") ;
@@ -160,18 +166,21 @@ public class CarCommMessage implements RoadReportInfo
 
     result.append (" [") ;
 
-    for (i = 0 ; i < carAlertTbl.length ; i ++)
+    if (carAlertTbl != null)
     {
-      if (i > 0)
+      for (i = 0 ; i < carAlertTbl.length ; i ++)
       {
-        result.append (" ") ;
-      }
+        if (i > 0)
+        {
+          result.append (" ") ;
+        }
 
-      car_alerts = carAlertTbl [i] ;
+        car_alerts = carAlertTbl [i] ;
 
-      for (alert_no = 0 ; alert_no < carAlertTbl.length ; alert_no ++)
-      {
-        result.append ((car_alerts [alert_no]) ? "+" : "-") ;
+        for (alert_no = 0 ; alert_no < carAlertTbl.length ; alert_no ++)
+        {
+          result.append ((car_alerts [alert_no]) ? "+" : "-") ;
+        }
       }
     }
 

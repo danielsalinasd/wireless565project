@@ -69,7 +69,7 @@ public class MovementVector
   public String toString ()
   {
     return (String.format ("<Movement %g %g %g %g>",
-                           longitude, latitude, bearing, speed)) ;
+                           latitude, longitude, bearing, speed)) ;
   }
 
 } //  END public class MovementVector

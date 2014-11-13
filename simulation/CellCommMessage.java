@@ -123,14 +123,17 @@ public class CellCommMessage implements RoadReportInfo
 
     result.append (" [") ;
 
-    for (i = 0 ; i < carIds.length ; i ++)
+    if (carIds != null)
     {
-      if (i > 0)
+      for (i = 0 ; i < carIds.length ; i ++)
       {
-        result.append (" ") ;
-      }
+        if (i > 0)
+        {
+          result.append (" ") ;
+        }
 
-      result.append (String.format ("%d", carIds [i])) ;
+        result.append (String.format ("%d", carIds [i])) ;
+      }
     }
 
     result.append ("]") ;
@@ -139,14 +142,17 @@ public class CellCommMessage implements RoadReportInfo
 
     result.append (" [") ;
 
-    for (i = 0 ; i < msgTime.length ; i ++)
+    if (msgTime != null)
     {
-      if (i > 0)
+      for (i = 0 ; i < msgTime.length ; i ++)
       {
-        result.append (" ") ;
-      }
+        if (i > 0)
+        {
+          result.append (" ") ;
+        }
 
-      result.append (String.format ("%g", msgTime [i])) ;
+        result.append (String.format ("%g", msgTime [i])) ;
+      }
     }
 
     result.append ("]") ;
@@ -155,14 +161,17 @@ public class CellCommMessage implements RoadReportInfo
 
     result.append (" [") ;
 
-    for (i = 0 ; i < longitude.length ; i ++)
+    if (longitude != null)
     {
-      if (i > 0)
+      for (i = 0 ; i < longitude.length ; i ++)
       {
-        result.append (" ") ;
-      }
+        if (i > 0)
+        {
+          result.append (" ") ;
+        }
 
-      result.append (String.format ("%g", longitude [i])) ;
+        result.append (String.format ("%g", longitude [i])) ;
+      }
     }
 
     result.append ("]") ;
@@ -171,14 +180,17 @@ public class CellCommMessage implements RoadReportInfo
 
     result.append (" [") ;
 
-    for (i = 0 ; i < latitude.length ; i ++)
+    if (latitude != null)
     {
-      if (i > 0)
+      for (i = 0 ; i < latitude.length ; i ++)
       {
-        result.append (" ") ;
-      }
+        if (i > 0)
+        {
+          result.append (" ") ;
+        }
 
-      result.append (String.format ("%g", latitude [i])) ;
+        result.append (String.format ("%g", latitude [i])) ;
+      }
     }
 
     result.append ("]") ;
@@ -187,14 +199,17 @@ public class CellCommMessage implements RoadReportInfo
 
     result.append (" [") ;
 
-    for (i = 0 ; i < speed.length ; i ++)
+    if (speed != null)
     {
-      if (i > 0)
+      for (i = 0 ; i < speed.length ; i ++)
       {
-        result.append (" ") ;
-      }
+        if (i > 0)
+        {
+          result.append (" ") ;
+        }
 
-      result.append (String.format ("%g", speed [i])) ;
+        result.append (String.format ("%g", speed [i])) ;
+      }
     }
 
     result.append ("]") ;
@@ -203,16 +218,19 @@ public class CellCommMessage implements RoadReportInfo
 
     result.append (" [") ;
 
-    for (i = 0 ; i < msgAlertTbl.length ; i ++)
+    if (msgAlertTbl != null)
     {
-      if (i > 0)
+      for (i = 0 ; i < msgAlertTbl.length ; i ++)
       {
-        result.append (" ") ;
-      }
+        if (i > 0)
+        {
+          result.append (" ") ;
+        }
 
-      result.append (String.format ("%d.%d",
-                                    (msgAlertTbl [i] >> MSG_SEQ_BITS),
-                                    (msgAlertTbl [i] & MSG_SEQ_MASK))) ;
+        result.append (String.format ("%d.%d",
+                                      (msgAlertTbl [i] >> MSG_SEQ_BITS),
+                                      (msgAlertTbl [i] & MSG_SEQ_MASK))) ;
+      }
     }
 
     result.append ("]") ;
@@ -221,14 +239,17 @@ public class CellCommMessage implements RoadReportInfo
 
     result.append (" [") ;
 
-    for (i = 0 ; i < msgAlertType.length ; i ++)
+    if (msgAlertType != null)
     {
-      if (i > 0)
+      for (i = 0 ; i < msgAlertType.length ; i ++)
       {
-        result.append (" ") ;
-      }
+        if (i > 0)
+        {
+          result.append (" ") ;
+        }
 
-      result.append (String.format ("%d", msgAlertType [i])) ;
+        result.append (String.format ("%d", msgAlertType [i])) ;
+      }
     }
 
     result.append ("]") ;
@@ -237,18 +258,21 @@ public class CellCommMessage implements RoadReportInfo
 
     result.append (" [") ;
 
-    for (i = 0 ; i < carAlertTbl.length ; i ++)
+    if (carAlertTbl != null)
     {
-      if (i > 0)
+      for (i = 0 ; i < carAlertTbl.length ; i ++)
       {
-        result.append (" ") ;
-      }
+        if (i > 0)
+        {
+          result.append (" ") ;
+        }
 
-      car_alerts = carAlertTbl [i] ;
+        car_alerts = carAlertTbl [i] ;
 
-      for (alert_no = 0 ; alert_no < carAlertTbl.length ; alert_no ++)
-      {
-        result.append ((car_alerts [alert_no]) ? "+" : "-") ;
+        for (alert_no = 0 ; alert_no < carAlertTbl.length ; alert_no ++)
+        {
+          result.append ((car_alerts [alert_no]) ? "+" : "-") ;
+        }
       }
     }
 

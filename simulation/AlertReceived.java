@@ -60,7 +60,7 @@ class AlertReceived
    *************************************************************************
    */
 
-  public String format ()
+  public String toString ()
   {
     int               i ;
     StringBuilder     result = new StringBuilder () ;
