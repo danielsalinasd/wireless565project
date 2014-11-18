@@ -126,7 +126,8 @@ public class Car implements RoadReportInfo
 
     sim.timerUpdate (locationSendTime) ;
 
-    System.out.format ("CarCreated: %g %d\n", creationTime, carId) ;
+    System.out.format ("CarCreated: %g %d %s\n",
+                       creationTime, carId, car_route.toString ()) ;
 
   } // END public Car
 
@@ -146,9 +147,13 @@ public class Car implements RoadReportInfo
     //  Update the location from the route.  This will throw a
     //  RouteExpiredException if the end of the route has been reached.
 
+    curTime               = simulation.getCurrentTime () ;
+
     location              = path.routeTime (curTime - creationTime) ;
 
     nextTimer             = curTime + NEXT_UPDATE_INTERVAL ;
+
+    //  System.out.format ("Start updateTime: %d %g\n", carId, nextTimer) ;
 
     //  Handle expired messages.
 
@@ -162,6 +167,8 @@ public class Car implements RoadReportInfo
       nextTimer = receivedMsgExpire ;
     }
 
+    //  System.out.format ("After MsgExp: %d %g\n", carId, nextTimer) ;
+
     //  Handle rebroadcast of messages.
 
     if (receivedMsgResend > 0.0 && receivedMsgResend <= curTime)
@@ -173,6 +180,8 @@ public class Car implements RoadReportInfo
     {
       nextTimer = receivedMsgResend ;
     }
+
+    //  System.out.format ("After MsgResend: %d %g\n", carId, nextTimer) ;
 
     //  Send the location periodically.
 
@@ -186,6 +195,8 @@ public class Car implements RoadReportInfo
       nextTimer = locationSendTime ;
     }
 
+    //  System.out.format ("After SendLoc: %d %g\n", carId, nextTimer) ;
+
     //  Log the locations received periodically.
 
     if (logLocationTime > 0.0 && logLocationTime <= curTime)
@@ -198,6 +209,8 @@ public class Car implements RoadReportInfo
       nextTimer = logLocationTime ;
     }
 
+    //  System.out.format ("After LogLoc: %d %g\n", carId, nextTimer) ;
+
     //  Log the alerts received periodically.
 
     if (logAlertTime > 0.0 && logAlertTime <= curTime)
@@ -209,6 +222,8 @@ public class Car implements RoadReportInfo
     {
       nextTimer = logAlertTime ;
     }
+
+    //  System.out.format ("After MsgAlerts: %d %g\n", carId, nextTimer) ;
 
     //  Update the next timer for the car on the simulation timer list.
 
@@ -356,6 +371,13 @@ public class Car implements RoadReportInfo
     sendCarComm (MT_LOCATION, null, null, null) ;
 
     locationSendTime = curTime + LOCATION_SEND_INTERVAL ;
+
+    if (logLocationTime == 0.0 ||
+        logLocationTime > curTime + LOCATION_LOG_INTERVAL)
+    {
+      logLocationTime = curTime + LOCATION_LOG_INTERVAL ;
+      simulation.timerUpdate (logLocationTime) ;
+    }
   }
 
 
@@ -395,7 +417,8 @@ public class Car implements RoadReportInfo
                        location.latitude, location.longitude,
                        message) ;
 
-    simulation.carComm.sendMessage (location.latitude,
+    simulation.carComm.sendMessage (this,
+                                    location.latitude,
                                     location.longitude,
                                     message) ;
   }
@@ -515,6 +538,7 @@ public class Car implements RoadReportInfo
 
   private void logLocations ()
   {
+    int             car_id ;
     ReceivedMessage cur_msg ;
     Vector<Integer> car_ids   = new Vector<Integer> () ;
     Vector<Double>  car_times = new Vector<Double> () ;
@@ -547,11 +571,12 @@ public class Car implements RoadReportInfo
     for (int i = 0 ; i < receivedMsgCnt ; i ++)
     {
       cur_msg = receivedMsgTbl.elementAt (i) ;
+      car_id  = (cur_msg.receivedMessage.msgId >> MSG_SEQ_BITS) ;
 
-      if (cur_msg.receivedMessage.msgType == MT_LOCATION)
+      if (cur_msg.receivedMessage.msgType == MT_LOCATION && car_id != carId)
       {
         car_ids.addElement    (
-            new Integer (cur_msg.receivedMessage.msgId >> MSG_SEQ_BITS)) ;
+            new Integer (car_id)) ;
         car_times.addElement  (
             new Double (cur_msg.receivedMessage.msgTime)) ;
         car_lon.addElement    (
@@ -587,8 +612,8 @@ public class Car implements RoadReportInfo
                                        car_lat_tbl, car_speed_tbl,
                                        null, null, null) ;
 
-    System.out.format ("LogLocs: %g %d %s\n",
-                       curTime, carId, log_message.toString ()) ;
+    System.out.format ("LogLocs: %g %d ", curTime, carId) ;
+    System.out.println (log_message.toString ()) ;
 
     simulation.cellComm.sendMessageToServer (log_message) ;
 
@@ -819,6 +844,7 @@ public class Car implements RoadReportInfo
     if (receivedMsgResend == 0.0 || receivedMsgResend > resend_time)
     {
       receivedMsgResend = resend_time ;
+      simulation.timerUpdate (resend_time) ;
     }
 
     //  Handle location messages.  Replace the last one sent with this one.
@@ -830,10 +856,17 @@ public class Car implements RoadReportInfo
         receivedMsgCnt -- ;
         receivedMsgTbl.setElementAt (cur_msg, loc_index) ;
         receivedMsgTbl.removeElementAt (receivedMsgCnt) ;
-
-        System.out.format ("RcvMsgLoc: %g %d %g %g %s\n",
-                           curTime, carId, lat, lon, message.toString ()) ;
       }
+
+      if (logLocationTime == 0.0 ||
+          logLocationTime > curTime + LOCATION_LOG_INTERVAL)
+      {
+        logLocationTime = curTime + LOCATION_LOG_INTERVAL ;
+        simulation.timerUpdate (logLocationTime) ;
+      }
+
+      System.out.format ("RcvMsgLoc: %g %d %g %g %s\n",
+                         curTime, carId, lat, lon, cur_msg.toString ()) ;
     }
 
     //  Save all alerts in the alerts received table.
@@ -848,6 +881,8 @@ public class Car implements RoadReportInfo
                                   (simulation.randomGen.nextDouble () *
                                    ALERT_LOG_INTERVAL_ADJ)) ;
         logAlertInterval = logAlertInterval * ALERT_LOG_INTERVAL_BACKOFF ;
+
+        simulation.timerUpdate (logAlertTime) ;
       }
 
       alertsReceivedTbl.addElement (new AlertInfo (message.msgId,
@@ -858,7 +893,7 @@ public class Car implements RoadReportInfo
       alertsReceivedCnt ++ ;
 
       System.out.format ("RcvMsgAlert: %g %d %g %g %s\n",
-                         curTime, carId, lat, lon, message.toString ()) ;
+                         curTime, carId, lat, lon, cur_msg.toString ()) ;
     }
 
     //  Find out if this car's location has been logged to the server.
@@ -880,6 +915,8 @@ public class Car implements RoadReportInfo
                                    LOCATION_LOG_INTERVAL_ADJ) ;
           logLocationInterval   = logLocationInterval *
                                   LOCATION_LOG_INTERVAL_BACKOFF ;
+
+          simulation.timerUpdate (logLocationTime) ;
         }
       }
     }

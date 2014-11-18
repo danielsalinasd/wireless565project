@@ -39,11 +39,13 @@ public interface RoadReportInfo
   static final double         MSG_RESEND_INTERVAL           = 1.0 ;
   static final double         MSG_EXPIRE_INTERVAL           = 60.0 ;
 
-  static final double         CAR_CREATION_INTERVAL         = 60.0 ;
+  static final double         CAR_CREATION_INTERVAL         = 3.0 ;
 
   static final double         ALERT_CREATION_INTERVAL       = 60.0 ;
 
   static final double         NEXT_UPDATE_INTERVAL          = 60.0 ;
+
+  static final double         SIMULATION_INTERVAL           = 600.0 ;
 
   //  Message ID built from car ID and message sequence number.
   //  (Car ID is shifted by given number of bits and added to the

@@ -56,8 +56,9 @@ public class RoadReport implements RoadReportInfo
 
   private double                nextTimer ;
 
-  private double                addAlertTime  = 0.0 ;
-  private double                addCarTime    = 0.0 ;
+  private double                addAlertTime  = ALERT_CREATION_INTERVAL +
+                                                0.3 ;
+  private double                addCarTime    = 0.5 ;
 
 
   /*************************************************************************
@@ -111,7 +112,7 @@ public class RoadReport implements RoadReportInfo
     System.out.println ("Starting the Simulation") ;
 
     simulation.curTime   = 0.0 ;
-    simulation.nextTimer = 1.0 ;
+    simulation.nextTimer = 0.1 ;
 
     simulation.timerHandler () ;
 
@@ -150,7 +151,7 @@ public class RoadReport implements RoadReportInfo
   {
     //  Update the current time to the next timer value.
 
-    while (true)
+    while (curTime < SIMULATION_INTERVAL)
     {
       System.out.format ("Timer: %g %g\n", curTime, nextTimer) ;
 

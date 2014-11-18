@@ -119,7 +119,7 @@ public class CarCommMessage implements RoadReportInfo
     result.append (String.format ("<CarCommMsg %d.%d %g %g %g %d %g",
                                   (msgId >> MSG_SEQ_BITS),
                                   (msgId & MSG_SEQ_MASK),
-                                  longitude, latitude, speed, msgType,
+                                  latitude, longitude, speed, msgType,
                                   msgTime)) ;
 
     //  Append the Car Table.

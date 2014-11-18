@@ -97,6 +97,7 @@ public class CarComm
    *  Reception clarity also depends on distance between sender and
    *  receiver.
    *
+   *  @param    sender        Car sending the message.
    *  @param    lat           Latitude of the sender of the message.
    *  @param    lon           Longitude of the sender of the message.
    *  @param    message       Message being sent.
@@ -105,6 +106,7 @@ public class CarComm
    */
 
   public void sendMessage (
+    Car                       sender,
     double                    lat,
     double                    lon,
     CarCommMessage            message
@@ -125,6 +127,13 @@ public class CarComm
     for (int i = 0 ; i < simulation.carCnt ; i ++)
     {
       cur_car = simulation.carTbl.elementAt (i) ;
+
+      //  A car does not receive the message that it is sending.
+
+      if (cur_car == sender)
+      {
+        continue ;
+      }
 
       //  Determine the received clarity for the message for this car.
 
