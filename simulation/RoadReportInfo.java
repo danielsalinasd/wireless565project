@@ -104,5 +104,12 @@ public interface RoadReportInfo
   static final double         SEPARATION_BASE               = 0.3 ;
   static final double         SEPARATION_TIME               = 60.0 ;
 
+  //  Alert Grid parameters.
+
+  static final double         GRID_KM                       = 0.5 ;
+  static final int            GRID_ID_XMULT                 = 46340 ;
+
+  static final byte           ALERT_MISS_LIMIT              = 3 ;
+
 
 } // END public interface RoadReportInfo
