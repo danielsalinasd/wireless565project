@@ -1,7 +1,7 @@
 /*****************************************************************************
  *
- *  VANET/Cellular Road Reporting Simulation System Defintions.
- *  Constants used for the Roud Reporting System.
+ *  VANET/Cellular Road Reporting Simulation System Definitions.
+ *  Constants used for the Road Reporting System.
  *
  *  @copyright  Copyright 2014 Emery Newlon
  *
@@ -42,6 +42,7 @@ public interface RoadReportInfo
   static final double         CAR_CREATION_INTERVAL         = 3.0 ;
 
   static final double         ALERT_CREATION_INTERVAL       = 60.0 ;
+  static final double         ALERT_RESEND_INTERVAL         = 10.0 ;
 
   static final double         NEXT_UPDATE_INTERVAL          = 60.0 ;
 
@@ -72,7 +73,7 @@ public interface RoadReportInfo
 
   //  Conversions from latitude and longitude in degrees to kilometers.
   //  Uses the circumference of the Earth in kilometers.
-  //  Logitude separation decreases as latitude increases by the cosime of
+  //  Logitude separation decreases as latitude increases by the cosine of
   //  the latitude.
 
   static final double         LAT_CIRCUMFERENCE_KM          = 4.0007860e4 ;
@@ -110,6 +111,5 @@ public interface RoadReportInfo
   static final int            GRID_ID_XMULT                 = 46340 ;
 
   static final byte           ALERT_MISS_LIMIT              = 3 ;
-
 
 } // END public interface RoadReportInfo

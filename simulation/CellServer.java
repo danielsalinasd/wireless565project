@@ -138,7 +138,7 @@ public class CellServer implements RoadReportInfo
   private class Alert
   {
     public AlertInfo              alertInfo ;
-    public Integer                alertId ;
+    public AlertId                alertId ;
     public int                    gridX ;
     public int                    gridY ;
 
@@ -149,7 +149,7 @@ public class CellServer implements RoadReportInfo
       double                lon_adjust ;
 
       alertInfo           = alert_info ;
-      alertId             = new Integer (alertInfo.msgId) ;
+      alertId             = new AlertId (alertInfo.msgId, alertInfo.time) ;
 
        //  Determine the grid the alert is in.
 
@@ -185,8 +185,8 @@ public class CellServer implements RoadReportInfo
     public CarInfo          sendToCar ;
     public byte             maxMissedCnt ;
     public boolean      []  gridAlertNos ;
-    public HashMap<Integer,Alert>
-                            missedAlerts = new HashMap<Integer,Alert> () ;
+    public HashMap<AlertId,Alert>
+                            missedAlerts = new HashMap<AlertId,Alert> () ;
     public Vector<CarInfo>  gridCars     = new Vector<CarInfo> () ;
 
     public MissingAlerts (
@@ -216,6 +216,10 @@ public class CellServer implements RoadReportInfo
   //  Car IDs provided to cars when they are created.
 
   private int                 carId = 0 ;
+
+  //  Timer used to determine when to resend alerts to cars that want them.
+
+  private double              alertResendTimer = 0.0 ;
 
 
   /*************************************************************************
@@ -273,6 +277,7 @@ public class CellServer implements RoadReportInfo
     int                       alert_dst ;
     int                       car_id ;
     int                       alert_msgid ;
+    double                    alert_time ;
     Integer                   key ;
     CarInfo                   car_info ;
     Alert                     alert_info = null ;
@@ -294,7 +299,8 @@ public class CellServer implements RoadReportInfo
 
         if (car_info == null)
         {
-          car_info = carTbl.put (key, new CarInfo (car_id)) ;
+          car_info = new CarInfo (car_id) ;
+          carTbl.put (key, car_info) ;
         }
 
         car_info.updateLocation (message.longitude [car_no],
@@ -320,6 +326,7 @@ public class CellServer implements RoadReportInfo
            alert_no ++)
       {
         alert_msgid = message.msgAlertTbl [alert_no] ;
+        alert_time  = message.msgTime     [alert_no] ;
 
         //  Find the alert in the table if it is there.  Add it if not.
 
@@ -327,21 +334,24 @@ public class CellServer implements RoadReportInfo
         {
           alert_info = alertTbl.elementAt (i) ;
 
-          if (alert_info.alertInfo.msgId == alert_msgid)
+          if (alert_info.alertInfo.msgId == alert_msgid &&
+              alert_info.alertInfo.time  == alert_time)
           {
             alert_indecies [alert_no] = i ;
             break ;
           }
         }
 
-        if (alertCnt <= 0 || alert_info.alertInfo.msgId != alert_msgid)
+        if (alertCnt <= 0 ||
+            (alert_info.alertInfo.msgId != alert_msgid ||
+             alert_info.alertInfo.time  != alert_time))
         {
           alert_info = new Alert (
                           new AlertInfo (alert_msgid,
                                          message.msgAlertType [alert_no],
                                          message.longitude    [alert_no],
                                          message.latitude     [alert_no],
-                                         message.msgTime      [alert_no])) ;
+                                         alert_time)) ;
           alertTbl.add (alert_info) ;
           alert_indecies [alert_no] = alertCnt ++ ;
         }
@@ -389,7 +399,17 @@ public class CellServer implements RoadReportInfo
           }
         } //  IF (car_info != null)
       }   //  FOR (car_no = 0 ; car_no < message.carIds.length ; car_no ++)
-    }     //  ELSE IF (message.msgType == MT_ALERT_TBL_SENT)
+
+      //  Update the alert resend time if needed.
+
+      if (alertResendTimer == 0.0 && alertCnt > 0)
+      {
+        alertResendTimer = simulation.getCurrentTime () +
+                           ALERT_RESEND_INTERVAL ;
+
+        simulation.timerUpdate (alertResendTimer) ;
+      }
+    } //  ELSE IF (message.msgType == MT_ALERT_TBL_SENT)
 
     //  Unrecognized message.
 
@@ -431,6 +451,8 @@ public class CellServer implements RoadReportInfo
 
   private void sendAlerts ()
   {
+    double                    now ;
+
     HashMap<Integer,MissingAlerts>
                               missed_cars =
                                   new HashMap<Integer,MissingAlerts> () ;
@@ -454,6 +476,26 @@ public class CellServer implements RoadReportInfo
     double                []  longitudes ;
     double                []  latitudes ;
     double                []  times ;
+
+    //  Perform the operation only if there are alerts in the table.
+    //  Reschedule the operation as well.
+
+    if (alertCnt <= 0 || alertResendTimer <= 0.0)
+    {
+      alertResendTimer = 0.0 ;
+      return ;
+    }
+
+    now = simulation.getCurrentTime () ;
+
+    if (now < alertResendTimer)
+    {
+      return ;
+    }
+
+    alertResendTimer = now + ALERT_RESEND_INTERVAL ;
+
+    simulation.timerUpdate (alertResendTimer) ;
 
     //  Search for missing alerts for each car.
 

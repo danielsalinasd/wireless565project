@@ -157,25 +157,6 @@ public class CellCommMessage implements RoadReportInfo
 
     result.append ("]") ;
 
-     //  Append the Longitues.
-
-    result.append (" [") ;
-
-    if (longitude != null)
-    {
-      for (i = 0 ; i < longitude.length ; i ++)
-      {
-        if (i > 0)
-        {
-          result.append (" ") ;
-        }
-
-        result.append (String.format ("%g", longitude [i])) ;
-      }
-    }
-
-    result.append ("]") ;
-
     //  Append the Latitudes.
 
     result.append (" [") ;
@@ -190,6 +171,25 @@ public class CellCommMessage implements RoadReportInfo
         }
 
         result.append (String.format ("%g", latitude [i])) ;
+      }
+    }
+
+    result.append ("]") ;
+
+     //  Append the Longitudes.
+
+    result.append (" [") ;
+
+    if (longitude != null)
+    {
+      for (i = 0 ; i < longitude.length ; i ++)
+      {
+        if (i > 0)
+        {
+          result.append (" ") ;
+        }
+
+        result.append (String.format ("%g", longitude [i])) ;
       }
     }
 

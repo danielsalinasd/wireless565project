@@ -41,6 +41,7 @@ public class CarCommMessage implements RoadReportInfo
   //  Alerts that are being reported as received or table sent.
 
   public final int        []  msgAlertTbl ;   //  Table of message IDs.
+  public final double     []  timeAlertTbl ;  //  Table of message times.
   public final boolean  [][]  carAlertTbl ;   //  Table of flags indicating
                                               //  which alerts each car has
                                               //  seen.
@@ -62,6 +63,8 @@ public class CarCommMessage implements RoadReportInfo
    *                          otherwise.
    *  @param    msg_alert_tbl Table of message IDs that carried the alerts
    *                          being ack'ed, null otherwise.
+   *  @param    time_alert_tbl  Table of times of the messages that carried
+   *                            alerts being ack'ed, null otherwise.
    *  @param    car_alert_tbl Table of flags of which alerts in the message
    *                          alert table have been seen by each car.
    *                          First index is the index of the car in the car
@@ -81,19 +84,21 @@ public class CarCommMessage implements RoadReportInfo
     double                    time,
     int                   []  car_tbl,
     int                   []  msg_alert_tbl,
+    double                []  time_alert_tbl,
     boolean             [][]  car_alert_tbl
   )
   {
-    msgId       = (car_id << MSG_SEQ_BITS) | (msg_seq & MSG_SEQ_MASK) ;
-    longitude   = lon ;
-    latitude    = lat ;
-    speed       = spd ;
+    msgId         = (car_id << MSG_SEQ_BITS) | (msg_seq & MSG_SEQ_MASK) ;
+    longitude     = lon ;
+    latitude      = lat ;
+    speed         = spd ;
 
-    msgType     = msg_type ;
-    msgTime     = time ;
-    carIdTbl    = car_tbl ;
-    msgAlertTbl = msg_alert_tbl ;
-    carAlertTbl = car_alert_tbl ;
+    msgType       = msg_type ;
+    msgTime       = time ;
+    carIdTbl      = car_tbl ;
+    msgAlertTbl   = msg_alert_tbl ;
+    timeAlertTbl  = time_alert_tbl ;
+    carAlertTbl   = car_alert_tbl ;
   }
 
 
@@ -141,7 +146,7 @@ public class CarCommMessage implements RoadReportInfo
 
     result.append ("]") ;
 
-    //  Append the Alert Table.
+    //  Append the Alert Message ID Table.
 
     result.append (" [") ;
 
@@ -162,7 +167,26 @@ public class CarCommMessage implements RoadReportInfo
 
     result.append ("]") ;
 
-    //  Append the Car Alert Table.
+     //  Append the Alert Time Table.
+
+    result.append (" [") ;
+
+    if (timeAlertTbl != null)
+    {
+      for (i = 0 ; i < timeAlertTbl.length ; i ++)
+      {
+        if (i > 0)
+        {
+          result.append (" ") ;
+        }
+
+        result.append (String.format ("%g", timeAlertTbl [i])) ;
+      }
+    }
+
+    result.append ("]") ;
+
+   //  Append the Car Alert Table.
 
     result.append (" [") ;
 
