@@ -822,7 +822,7 @@ public class Car implements RoadReportInfo
 
       else if ((message.msgId >> MSG_SEQ_BITS) ==
                (cur_msg.receivedMessage.msgId >> MSG_SEQ_BITS) &&
-               message.msgType == MT_LOCATION)
+               cur_msg.receivedMessage.msgType == MT_LOCATION)
       {
         loc_index = i ;
       }
@@ -885,8 +885,9 @@ public class Car implements RoadReportInfo
         simulation.timerUpdate (logLocationTime) ;
       }
 
-      System.out.format ("RcvMsgLoc: %g %d %g %g %s\n",
-                         curTime, carId, lat, lon, cur_msg.toString ()) ;
+      System.out.format ("RcvMsgLoc: %g %d %g %g %d %s\n",
+                         curTime, carId, lat, lon, loc_index,
+                         cur_msg.toString ()) ;
     }
 
     //  Save all alerts in the alerts received table.

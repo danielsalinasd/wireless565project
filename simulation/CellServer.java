@@ -90,14 +90,17 @@ public class CellServer implements RoadReportInfo
 
       gridId        = new Integer (gridX * GRID_ID_XMULT + gridY) ;
 
-      //  Determine the bounds of the local area for the car.
+      //  Determine the bounds of the local area for the car.  It includes
+      //  one extra grid in each direction to handle the cases where the
+      //  car is on one edge of a grid and an alert is just across the
+      //  line in another grid.
 
       local_km      = SEPARATION_BASE + SEPARATION_TIME * speed ;
 
-      gridMinX      = (int) ((x - local_km) / GRID_KM) ;
-      gridMaxX      = (int) ((x + local_km) / GRID_KM) ;
-      gridMinY      = (int) ((y - local_km) / GRID_KM) ;
-      gridMaxY      = (int) ((y + local_km) / GRID_KM) ;
+      gridMinX      = (int) ((x - local_km) / GRID_KM) - 1 ;
+      gridMaxX      = (int) ((x + local_km) / GRID_KM) + 1 ;
+      gridMinY      = (int) ((y - local_km) / GRID_KM) - 1 ;
+      gridMaxY      = (int) ((y + local_km) / GRID_KM) + 1 ;
     }
 
     //  Produce a readable string.
@@ -449,9 +452,13 @@ public class CellServer implements RoadReportInfo
    *************************************************************************
    */
 
-  private void sendAlerts ()
+  public void sendAlerts ()
   {
     double                    now ;
+    double                    lon_adjust ;
+    double                    lon_diff ;
+    double                    lat_diff ;
+    double                    dist_sqr ;
 
     HashMap<Integer,MissingAlerts>
                               missed_cars =
@@ -504,7 +511,15 @@ public class CellServer implements RoadReportInfo
     while (car_iterator.hasNext ())
     {
       cur_car = car_iterator.next () ;
+
+      if (cur_car.missedAlertCnt == null)
+      {
+        continue ;
+      }
+
       cur_car.missedMaxCnt = -1 ;
+
+      lon_adjust = Math.cos (cur_car.latitude * Math.PI / 180.0) ;
 
       for (alert_no = 0 ; alert_no < alertCnt ; alert_no ++)
       {
@@ -534,6 +549,20 @@ public class CellServer implements RoadReportInfo
               cur_car.gridMaxX <= cur_alert.gridX ||
               cur_car.gridMinY >= cur_alert.gridY ||
               cur_car.gridMaxY <= cur_alert.gridY)
+          {
+            continue ;
+          }
+
+          lat_diff      = (cur_car.latitude  -
+                           cur_alert.alertInfo.latitude)  * LAT2KM ;
+          lon_diff      = (cur_car.longitude -
+                           cur_alert.alertInfo.longitude) * LON2KM *
+                                                            lon_adjust ;
+
+          dist_sqr      = lat_diff * lat_diff + lon_diff * lon_diff ;
+
+          if (dist_sqr > Math.pow (SEPARATION_BASE +
+                                   SEPARATION_TIME * cur_car.speed, 2))
           {
             continue ;
           }

@@ -158,6 +158,10 @@ public class RoadReport implements RoadReportInfo
       curTime   = nextTimer ;
       nextTimer = 0.0 ;
 
+      //  Send missing alerts to cars that need them.
+      
+      cellServer.sendAlerts () ;
+
       //  Create any new cars.
 
       addCar () ;
