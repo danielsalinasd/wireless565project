@@ -22,6 +22,10 @@
 public interface RoadReportInfo
 {
 
+  //  Route parameters.
+
+  static final int            ROUTE_GRID_SIZE               = 4 ;
+
   //  Timing parameters (in seconds).
 
   static final double         LOCATION_SEND_INTERVAL        =  5.0 ;
@@ -41,7 +45,7 @@ public interface RoadReportInfo
 
   static final double         CAR_CREATION_INTERVAL         = 3.0 ;
 
-  static final double         ALERT_CREATION_INTERVAL       = 60.0 ;
+  static final double         ALERT_CREATION_INTERVAL       = 6.0 ;
   static final double         ALERT_RESEND_INTERVAL         = 10.0 ;
 
   static final double         NEXT_UPDATE_INTERVAL          = 60.0 ;

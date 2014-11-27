@@ -1,0 +1,7 @@
+# Sript to produce and process road report data.
+
+java RoadReport >/e/Work/Temp/rep.log
+sed  '/^RcvMsgWeak:/d' </e/Work/Temp/rep.log >/e/Work/Temp/rep1.log
+
+awk  '$1=="SendLoc:"{print $3, $4, $5, $6, $11}' </e/Work/Temp/rep1.log >/e/Work/Temp/loc.log
+awk  '{if ($1>=595.0) print $2, $3, $4, $5}' </e/Work/Temp/loc.log | sort -n >/e/Work/Temp/loc_final.log

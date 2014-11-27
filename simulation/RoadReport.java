@@ -75,6 +75,10 @@ public class RoadReport implements RoadReportInfo
     String              []  args
   )
   {
+    int                     roads ;
+    double                  lati ;
+    double                  loni ;
+
     //  Create the simulation object.
 
     simulation  = new RoadReport () ;
@@ -92,18 +96,22 @@ public class RoadReport implements RoadReportInfo
 
     //  Fill the route table.
 
-    for (double i = 0.0 ; i < 4.0 ; i += 1.0)
+    roads = ROUTE_GRID_SIZE - 1 ;
+    lati  = 0.09 / roads ;
+    loni  = 0.11 / roads ;
+
+    for (int i = 0 ; i <= roads ; i += 1)
     {
-      for (double s = 10.0 ; s < 100.0 ; s += 20.0)
+      for (int s = 10 ; s < 100 ; s += 20)
       {
-        routeTbl.add (new Route (1.0 * 0.14 - 100.42, i   * 0.1 + 40.00,
+        routeTbl.add (new Route (0.0   * loni - 100.0, i     * lati + 40.0,
                                   90.0, s, 3600 * 10.0 / s)) ;
-        routeTbl.add (new Route (1.0 * 0.14 - 100.00, i   * 0.1 + 40.00,
-                                 180.0, s, 3600 * 10.0 / s)) ;
-        routeTbl.add (new Route (i   * 0.14 - 100.42, 1.0 * 0.1 + 40.00,
-                                   0.0, s, 3600 * 10.0 / s)) ;
-        routeTbl.add (new Route (i   * 0.14 - 100.42, 1.0 * 0.1 + 40.30,
+        routeTbl.add (new Route (roads * loni - 100.0, i     * lati + 40.0,
                                  270.0, s, 3600 * 10.0 / s)) ;
+        routeTbl.add (new Route (i     * loni - 100.0, 0     * lati + 40.0,
+                                   0.0, s, 3600 * 10.0 / s)) ;
+        routeTbl.add (new Route (i     * loni - 100.0, roads * lati + 40.0,
+                                 180.0, s, 3600 * 10.0 / s)) ;
       }
     }
 
@@ -159,7 +167,7 @@ public class RoadReport implements RoadReportInfo
       nextTimer = 0.0 ;
 
       //  Send missing alerts to cars that need them.
-      
+
       cellServer.sendAlerts () ;
 
       //  Create any new cars.
