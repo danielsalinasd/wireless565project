@@ -269,7 +269,7 @@ public class CellCommMessage implements RoadReportInfo
 
         car_alerts = carAlertTbl [i] ;
 
-        for (alert_no = 0 ; alert_no < carAlertTbl.length ; alert_no ++)
+        for (alert_no = 0 ; alert_no < car_alerts.length ; alert_no ++)
         {
           result.append ((car_alerts [alert_no]) ? "+" : "-") ;
         }

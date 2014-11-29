@@ -88,6 +88,7 @@ public class Car implements RoadReportInfo
   double                    receivedMsgExpire   = 0.0 ;
   double                    receivedMsgResend   = 0.0 ;
   double                    locationSendTime ;
+  double                    alertSendTime       = 0.0 ;
   double                    logLocationTime     = 0.0 ;
   double                    logAlertTime        = 0.0 ;
 
@@ -210,6 +211,18 @@ public class Car implements RoadReportInfo
     }
 
     //  System.out.format ("After LogLoc: %d %g\n", carId, nextTimer) ;
+
+    //  Send alerts received periodically.
+
+    if (alertSendTime > 0.0 && alertSendTime <= curTime)
+    {
+      sendAlerts () ;
+    }
+
+    if (alertSendTime > 0.0 && alertSendTime < nextTimer)
+    {
+      nextTimer = alertSendTime ;
+    }
 
     //  Log the alerts received periodically.
 
@@ -415,7 +428,7 @@ public class Car implements RoadReportInfo
     System.out.format ("SendCarComm: %g %d %g %g %s\n",
                        curTime, carId,
                        location.latitude, location.longitude,
-                       message) ;
+                       message.toString ()) ;
 
     simulation.carComm.sendMessage (this,
                                     location.latitude,
@@ -518,11 +531,13 @@ public class Car implements RoadReportInfo
 
     if (alertsReceivedCnt == 0)
     {
-      logAlertTime = curTime + ALERT_LOG_INTERVAL *
-                               (logAlertInterval +
-                                ALERT_LOG_INTERVAL_FRACT -
-                                (simulation.randomGen.nextDouble () *
-                                 ALERT_LOG_INTERVAL_ADJ)) ;
+      alertSendTime = curTime + ALERT_RESEND_INTERVAL ;
+
+      logAlertTime  = curTime + ALERT_LOG_INTERVAL *
+                                (logAlertInterval +
+                                 ALERT_LOG_INTERVAL_FRACT -
+                                 (simulation.randomGen.nextDouble () *
+                                  ALERT_LOG_INTERVAL_ADJ)) ;
       logAlertInterval = logAlertInterval * ALERT_LOG_INTERVAL_BACKOFF ;
 
       simulation.timerUpdate (logAlertTime) ;
@@ -540,6 +555,50 @@ public class Car implements RoadReportInfo
 
     alertsReceivedCnt ++ ;
   }
+
+
+  /*************************************************************************
+   *
+   *  Send the alerts this car has received.
+   *  Send a table of all alerts that this car has received.
+   *
+   *************************************************************************
+   */
+
+  private void sendAlerts ()
+  {
+    int             []  msg_alert_tbl ;
+    double          []  msg_time_tbl ;
+    AlertInfo           cur_alert ;
+
+    //  Build the alert tables to send if there are any alerts.
+
+    if (alertsReceivedCnt <= 0)
+    {
+      alertSendTime = 0.0 ;
+      return ;
+    }
+
+    msg_alert_tbl = new int    [alertsReceivedCnt] ;
+    msg_time_tbl  = new double [alertsReceivedCnt] ;
+
+    for (int i = 0 ; i < alertsReceivedCnt ; i ++)
+    {
+      cur_alert = alertsReceivedTbl.elementAt (i) ;
+
+      msg_alert_tbl [i] = cur_alert.msgId ;
+      msg_time_tbl  [i] = cur_alert.time ;
+    }
+
+    //  Send the alerts to other cars.
+
+    System.out.print ("SendAlerts: ") ;
+
+    sendCarComm (MT_ALERT_RECVD, null, msg_alert_tbl, msg_time_tbl, null) ;
+
+    alertSendTime = curTime + ALERT_RESEND_INTERVAL ;
+
+  } //  END private void sendAlerts ()
 
 
   /*************************************************************************
@@ -659,9 +718,9 @@ public class Car implements RoadReportInfo
 
   private void logAlerts ()
   {
-    int         []  car_tbl         = new int     [carAlertsCnt] ;
+    int         []  car_tbl         = new int     [carAlertsCnt + 1] ;
     int         []  msg_alert_tbl   = new int     [alertsReceivedCnt] ;
-    boolean   [][]  car_alert_tbl   = new boolean [carAlertsCnt]
+    boolean   [][]  car_alert_tbl   = new boolean [carAlertsCnt + 1]
                                                   [alertsReceivedCnt] ;
     byte        []  msg_alert_tp    = new byte    [alertsReceivedCnt] ;
     double      []  time_tbl        = new double  [alertsReceivedCnt] ;
@@ -675,7 +734,8 @@ public class Car implements RoadReportInfo
 
     updateLocation () ;
 
-    //  Build the car table and the car alert table.
+    //  Build the car table and the car alert table from the car alerts
+    //  table and the alerts table for this car.
 
     for (int car_no = 0 ; car_no < carAlertsCnt ; car_no ++)
     {
@@ -690,6 +750,13 @@ public class Car implements RoadReportInfo
         car_alert_tbl [car_no] [alert_no] =
                   car_alert.receivedTbl [alert_no] ;
       }
+    }
+
+    car_tbl [carAlertsCnt] = carId ;
+
+    for (int alert_no = 0 ; alert_no < alertsReceivedCnt ; alert_no ++)
+    {
+      car_alert_tbl [carAlertsCnt] [alert_no] = true ;
     }
 
     //  Build the alert table.
@@ -902,11 +969,13 @@ public class Car implements RoadReportInfo
     {
       if (alertsReceivedCnt == 0)
       {
-        logAlertTime = curTime + ALERT_LOG_INTERVAL *
-                                 (logAlertInterval +
-                                  ALERT_LOG_INTERVAL_FRACT -
-                                  (simulation.randomGen.nextDouble () *
-                                   ALERT_LOG_INTERVAL_ADJ)) ;
+        alertSendTime = curTime + ALERT_RESEND_INTERVAL ;
+
+        logAlertTime  = curTime + ALERT_LOG_INTERVAL *
+                                  (logAlertInterval +
+                                   ALERT_LOG_INTERVAL_FRACT -
+                                   (simulation.randomGen.nextDouble () *
+                                    ALERT_LOG_INTERVAL_ADJ)) ;
         logAlertInterval = logAlertInterval * ALERT_LOG_INTERVAL_BACKOFF ;
 
         simulation.timerUpdate (logAlertTime) ;
@@ -919,8 +988,10 @@ public class Car implements RoadReportInfo
                                                    message.msgTime)) ;
       alertsReceivedCnt ++ ;
 
-      System.out.format ("RcvMsgAlert: %g %d %g %g %s\n",
-                         curTime, carId, lat, lon, cur_msg.toString ()) ;
+      System.out.format ("RcvMsgAlert: %g %d %g %g %g %g %s\n",
+                         curTime, carId, lat, lon,
+                         location.latitude, location.longitude,
+                         cur_msg.toString ()) ;
     }
 
     //  Find out if this car's location has been logged to the server.

@@ -73,6 +73,14 @@ public class CellServer implements RoadReportInfo
       double                x ;
       double                y ;
 
+      //  Make sure that the information is not older than the last
+      //  information collected.
+
+      if (time > tm)
+      {
+        return ;
+      }
+
       longitude     = lon ;
       latitude      = lat ;
       speed         = spd ;
@@ -101,7 +109,9 @@ public class CellServer implements RoadReportInfo
       gridMaxX      = (int) ((x + local_km) / GRID_KM) + 1 ;
       gridMinY      = (int) ((y - local_km) / GRID_KM) - 1 ;
       gridMaxY      = (int) ((y + local_km) / GRID_KM) + 1 ;
-    }
+
+    } //  END public void updateLocation (
+
 
     //  Produce a readable string.
 
@@ -659,7 +669,7 @@ public class CellServer implements RoadReportInfo
           new_alerts = new byte [alertCnt] ;
 
           System.arraycopy (cur_car.missedAlertCnt, 0, new_alerts, 0,
-                            alertCnt) ;
+                            cur_car.missedAlertCnt.length) ;
           cur_car.missedAlertCnt = new_alerts ;
         }
 
