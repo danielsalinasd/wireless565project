@@ -45,7 +45,7 @@ public interface RoadReportInfo
 
   static final double         CAR_CREATION_INTERVAL         = 3.0 ;
 
-  static final double         ALERT_CREATION_INTERVAL       = 6.0 ;
+  static final double         ALERT_CREATION_INTERVAL       = 20.0 ;
   static final double         ALERT_RESEND_INTERVAL         = 10.0 ;
 
   static final double         NEXT_UPDATE_INTERVAL          = 60.0 ;

@@ -727,6 +727,7 @@ public class Car implements RoadReportInfo
     double      []  lon_tbl         = new double  [alertsReceivedCnt] ;
     double      []  lat_tbl         = new double  [alertsReceivedCnt] ;
 
+    int             alert_cnt ;
     AlertReceived   car_alert ;
     AlertInfo       cur_alert ;
 
@@ -743,9 +744,11 @@ public class Car implements RoadReportInfo
 
       car_tbl [car_no] = car_alert.carId ;
 
-      for (int alert_no = 0 ;
-              alert_no < car_alert.receivedTbl.length ;
-           alert_no ++)
+      alert_cnt = (car_alert.receivedTbl.length > alertsReceivedCnt)
+                  ? alertsReceivedCnt
+                  : car_alert.receivedTbl.length ;
+
+      for (int alert_no = 0 ; alert_no < alert_cnt ; alert_no ++)
       {
         car_alert_tbl [car_no] [alert_no] =
                   car_alert.receivedTbl [alert_no] ;
@@ -1215,7 +1218,7 @@ public class Car implements RoadReportInfo
     //  Save all alerts in the alerts received table and send them out
     //  as well.
 
-    if (message.msgType >= MT_ALERTS)
+    if (message.msgType == MT_ALERT_TBL_SENT)
     {
       System.out.format ("CellMsgAlerts: %g %d %s\n",
                          curTime, carId, message.toString ()) ;
@@ -1256,6 +1259,13 @@ public class Car implements RoadReportInfo
 
       } //  FOR (int i = 0 ; i < message.msgTime.length ; i ++)
     }   //  IF (message.msgType >= MT_ALERTS)
+
+    //  Unrecognized message.
+
+    else
+    {
+      System.out.format ("CellMsgUnknown: %s\n", message.toString ()) ;
+    }
 
   } //  END public void receiveCellMessage
 

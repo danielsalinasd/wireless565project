@@ -31,6 +31,7 @@ public class CellServer implements RoadReportInfo
   private class CarInfo
   {
     public int              carId ;
+    public Integer          carKey ;
     public double           longitude ;
     public double           latitude ;
     public double           speed ;
@@ -57,6 +58,7 @@ public class CellServer implements RoadReportInfo
     )
     {
       carId           = car_id ;
+      carKey          = new Integer (carId) ;
     }
 
     //  Update Location.
@@ -183,7 +185,7 @@ public class CellServer implements RoadReportInfo
 
       //  Add the basic message information.
 
-      result.append (String.format ("<Alert %d %d %s ",
+      result.append (String.format ("<AlertAt %d,%d %s>",
                                     gridY, gridX,
                                     alertInfo.toString ())) ;
 
@@ -200,7 +202,8 @@ public class CellServer implements RoadReportInfo
     public boolean      []  gridAlertNos ;
     public HashMap<AlertId,Alert>
                             missedAlerts = new HashMap<AlertId,Alert> () ;
-    public Vector<CarInfo>  gridCars     = new Vector<CarInfo> () ;
+    public HashMap<Integer,CarInfo>
+                            gridCars     = new HashMap<Integer,CarInfo> () ;
 
     public MissingAlerts (
       CarInfo               car,
@@ -450,7 +453,11 @@ public class CellServer implements RoadReportInfo
     CellCommMessage           message
   )
   {
-    simulation.cellComm.sendMessageToCar (car_id, message) ;
+    if (! simulation.cellComm.sendMessageToCar (car_id, message))
+    {
+      System.out.format ("CellToCarFail: %d %s\n",
+                         car_id, message.toString ()) ;
+    }
   }
 
 
@@ -522,8 +529,14 @@ public class CellServer implements RoadReportInfo
     {
       cur_car = car_iterator.next () ;
 
+      // System.out.format ("FindAlert: %d %d,%d [%d:%d,%d:%d]",
+                         // cur_car.carId, cur_car.gridY, cur_car.gridX,
+                         // cur_car.gridMinY, cur_car.gridMaxY,
+                         // cur_car.gridMinX, cur_car.gridMaxX) ;
+
       if (cur_car.missedAlertCnt == null)
       {
+        // System.out.format (" no-misses\n") ;
         continue ;
       }
 
@@ -535,6 +548,8 @@ public class CellServer implements RoadReportInfo
       {
         cur_alert = alertTbl.elementAt (alert_no) ;
 
+        // System.out.format (" %s", cur_alert.toString ()) ;
+
         if (alert_no >= cur_car.missedAlertCnt.length)
         {
           missed_count = 0 ;
@@ -543,10 +558,11 @@ public class CellServer implements RoadReportInfo
         {
           missed_count = cur_car.missedAlertCnt [alert_no] ;
 
-          if (missed_count < 0) ;
+          if (missed_count < 0)
           {
             //  Car has already received this alert.
 
+            // System.out.format ("+") ;
             continue ;
           }
         }
@@ -560,6 +576,7 @@ public class CellServer implements RoadReportInfo
               cur_car.gridMinY >= cur_alert.gridY ||
               cur_car.gridMaxY <= cur_alert.gridY)
           {
+            // System.out.format ("-") ;
             continue ;
           }
 
@@ -574,11 +591,14 @@ public class CellServer implements RoadReportInfo
           if (dist_sqr > Math.pow (SEPARATION_BASE +
                                    SEPARATION_TIME * cur_car.speed, 2))
           {
+            // System.out.format ("!") ;
             continue ;
           }
         }
 
         //  Add the car and alert to the missing alerts for the car's grid.
+
+        // System.out.format ("&") ;
 
         missed_grid = missed_cars.get (cur_car.gridId) ;
 
@@ -591,7 +611,10 @@ public class CellServer implements RoadReportInfo
 
         missed_grid.gridAlertNos [alert_no] = true ;
 
-        missed_grid.gridCars.add (cur_car) ;
+        if (missed_grid.gridCars.get (cur_car.carKey) == null)
+        {
+          missed_grid.gridCars.put (cur_car.carKey, cur_car) ;
+        }
 
         missed_alert = missed_grid.missedAlerts.get (cur_alert.alertId) ;
 
@@ -611,6 +634,9 @@ public class CellServer implements RoadReportInfo
           missed_grid.sendToCar    = cur_car ;
         }
       } //  FOR (alert_no = 0 ; alert_no < alertCnt ; alert_no ++)
+
+      // System.out.println () ;
+
     }   //  WHILE (car_interator.hasNext ())
 
     //  For all grids that have cars missing alerts, send the alerts to one
@@ -654,12 +680,16 @@ public class CellServer implements RoadReportInfo
         alert_no ++ ;
       }
 
+      // System.out.format ("CellAlert: %s\n", message.toString ()) ;
+
       //  Send the message to the grid's car with the highest missed
       //  alerts and all cars with a missed alert count over the limit.
 
-      for (car_no = 0 ; car_no < missed_grid.gridCars.size () ; car_no ++)
+      car_iterator = missed_grid.gridCars.values ().iterator () ;
+
+      while (car_iterator.hasNext ())
       {
-        cur_car = missed_grid.gridCars.elementAt (car_no) ;
+        cur_car = car_iterator.next () ;
 
         //  Make sure all the alerts are represented in the car's missed
         //  alerts table.
@@ -678,6 +708,8 @@ public class CellServer implements RoadReportInfo
         if (cur_car == missed_grid.sendToCar ||
             cur_car.missedMaxCnt >= ALERT_MISS_LIMIT)
         {
+          // System.out.format ("CellAlertSend: %d\n", cur_car.carId) ;
+
           sendMessage (cur_car.carId, message) ;
 
           for (int i = 0 ; i < alertCnt ; i ++)
@@ -699,7 +731,7 @@ public class CellServer implements RoadReportInfo
             }
           }
         }
-      } //  FOR (car_no = 0 ; car_no < missed_grid.gridCars.size () ;   ...
+      } //  WHILE (car_iterator.hasNext ())
     }   //  WHILE (grid_interator.hasNext ())
 
   } //  END private void sendAlerts ()
